@@ -15,23 +15,21 @@ from __future__ import print_function
 import collections
 import os
 import json
-from bert import modeling
-from bert import optimization
-from bert import tokenization
+
 import tensorflow as tf
 import codecs
 from tensorflow.contrib.layers.python.layers import initializers
-from tensorflow.contrib import crf
-from tensorflow.contrib import rnn, cudnn_rnn
 
-from tensorflow.contrib.tpu import TPUEstimator, TPUConfig
-from sklearn.metrics import f1_score, precision_score, recall_score
-from tensorflow.python.ops import math_ops
+from bert import modeling
+from bert import optimization
+from bert import tokenization
+from lstm_crf_layer import BLSTM_CRF
+
 
 import tf_metrics
 import pickle
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 flags = tf.flags
@@ -44,7 +42,7 @@ if os.name == 'nt':
     root_path = 'C:\workspace\python\BERT-NER'
 else:
     bert_path = '/home/macan/ml/data/chinese_L-12_H-768_A-12/'
-    root_path = '/home/macan/ml/workspace/BERT-BiLSMT-CRF-NER2'
+    root_path = '/home/macan/ml/workspace/BERT-NER'
 
 flags.DEFINE_string(
     "data_dir", os.path.join(root_path, 'NERdata'),
@@ -80,8 +78,10 @@ flags.DEFINE_integer(
     "max_seq_length", 128,
     "The maximum total input sequence length after WordPiece tokenization."
 )
-flags.DEFINE_boolean('clean', True, 'remove the files which create from last training')
-flags.DEFINE_bool("do_train", True, "Whether to run training."
+
+flags.DEFINE_bool(
+    "do_train", True,
+    "Whether to run training."
 )
 flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
 
@@ -97,8 +97,9 @@ flags.DEFINE_integer("predict_batch_size", 8, "Total batch size for predict.")
 
 flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 
-flags.DEFINE_float("num_train_epochs", 5, "Total number of training epochs to perform.")
-
+flags.DEFINE_float("num_train_epochs", 3.0, "Total number of training epochs to perform.")
+flags.DEFINE_float('droupout_rate', 0.5, 'Dropout rate')
+flags.DEFINE_float('clip', 5, 'Gradient clip')
 flags.DEFINE_float(
     "warmup_proportion", 0.1,
     "Proportion of training to perform linear learning rate warmup for. "
@@ -121,6 +122,8 @@ flags.DEFINE_string('data_config_path', os.path.join(root_path, 'data.conf'),
                     'data config file, which save train and dev config')
 # lstm parame
 flags.DEFINE_integer('lstm_size', 128, 'size of lstm units')
+flags.DEFINE_integer('num_layers', 1, 'number of rnn layers, default is 1')
+
 
 
 class InputExample(object):
@@ -254,7 +257,7 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
     for (i, label) in enumerate(label_list, 1):
         label_map[label] = i
     # 保存label->index 的map
-    with codecs.open('./output/label2id.pkl', 'wb') as w:
+    with codecs.open(os.path.join(FLAGS.output_dir, 'label2id.pkl'), 'wb') as w:
         pickle.dump(label_map, w)
     textlist = example.text.split(' ')
     labellist = example.label.split(' ')
@@ -430,142 +433,16 @@ def create_model(bert_config, is_training, input_ids, input_mask,
     )
     # 获取对应的embedding 输入数据[batch_size, seq_length, embedding_size]
     embedding = model.get_sequence_output()
-    # embedding_size
-    hidden_size = embedding.shape[-1].value
-    seq_length = embedding.shape[1].value
+    max_seq_length = embedding.shape[1].value
 
     used = tf.sign(tf.abs(input_ids))
     lengths = tf.reduce_sum(used, reduction_indices=1)  # [batch_size] 大小的向量，包含了当前batch中的序列长度
-    print('seq_length', seq_length)
-    print('lengths', lengths)
 
-    # output_weight = tf.get_variable(
-    #     "output_weights", [num_labels, hidden_size],
-    #     initializer=tf.truncated_normal_initializer(stddev=0.02)
-    # )
-    # output_bias = tf.get_variable(
-    #     "output_bias", [num_labels], initializer=tf.zeros_initializer()
-    # )
-
-    ###########
-    # add by macan for lstm-crf model for ner
-    # t = tf.transpose(output_layer, perm=[1, 0 ,2]) #?
-    def lstm_layer():
-        # B-LSTM 构建双向一层的LSTM
-        # 定义两个LSTM网络
-        with tf.variable_scope('lstm_layer'):
-            lstm_cell = {}
-            for direction in ["forward", "backward"]:
-                with tf.variable_scope(direction):
-                    lstm_cell[direction] = rnn.CoupledInputForgetGateLSTMCell(
-                        FLAGS.lstm_size,
-                        use_peepholes=True,
-                        initializer=initializers.xavier_initializer(),
-                        state_is_tuple=True)
-            outputs, final_states = tf.nn.bidirectional_dynamic_rnn(
-                lstm_cell["forward"],
-                lstm_cell["backward"],
-                embedding,
-                dtype=tf.float32,
-                sequence_length=lengths)
-            return tf.concat(outputs, axis=2)
-
-    def project_layer_bilstm(lstm_outputs, name=None):
-        """
-        hidden layer between lstm layer and logits
-        :param lstm_outputs: [batch_size, num_steps, emb_size]
-        :return: [batch_size, num_steps, num_tags]
-        """
-        with tf.variable_scope("project" if not name else name):
-            with tf.variable_scope("hidden"):
-                W = tf.get_variable("W", shape=[FLAGS.lstm_size * 2, FLAGS.lstm_size],
-                                    dtype=tf.float32, initializer=initializers.xavier_initializer())
-
-                b = tf.get_variable("b", shape=[FLAGS.lstm_size], dtype=tf.float32,
-                                    initializer=tf.zeros_initializer())
-                output = tf.reshape(lstm_outputs, shape=[-1, FLAGS.lstm_size * 2])
-                hidden = tf.tanh(tf.nn.xw_plus_b(output, W, b))
-
-            # project to score of tags
-            with tf.variable_scope("logits"):
-                W = tf.get_variable("W", shape=[FLAGS.lstm_size, num_labels],
-                                    dtype=tf.float32, initializer=initializers.xavier_initializer())
-
-                b = tf.get_variable("b", shape=[num_labels], dtype=tf.float32,
-                                    initializer=tf.zeros_initializer())
-
-                pred = tf.nn.xw_plus_b(hidden, W, b)
-            return tf.reshape(pred, [-1, seq_length, num_labels])
-
-    def loss_layer(logits):
-        """
-        calculate crf loss
-        :param project_logits: [1, num_steps, num_tags]
-        :return: scalar loss
-        """
-        with tf.variable_scope("crf_loss"):
-            trans = tf.get_variable(
-                "transitions",
-                shape=[num_labels, num_labels],
-                initializer=initializers.xavier_initializer())
-            log_likelihood, trans = tf.contrib.crf.crf_log_likelihood(
-                inputs=logits,
-                tag_indices=labels,
-                transition_params=trans,
-                sequence_lengths=lengths)
-            return tf.reduce_mean(-log_likelihood), trans
-    if is_training:
-        embedding = tf.nn.dropout(embedding, 0.5)
-    lstm_outputs = lstm_layer()
-    logits = project_layer_bilstm(lstm_outputs)
-    loss, trans = loss_layer(logits)
-    # CRF 解码
-    pred_ids, _ = crf.crf_decode(potentials=logits, transition_params=trans, sequence_length=lengths)
-    # with tf.variable_scope('crf_layer'):
-    #     #CRF
-    #     logits = tf.layers.dense(output_layer, num_labels)
-    #     crf_params = tf.get_variable('crf', [num_labels, num_labels], dtype=tf.float32)
-    #     pred_ids, _ = tf.contrib.crf.crf_decode(logits, crf_params, seq_length)
-    #
-    # with tf.variable_scope('loss'):
-    #     log_likelihood, _ = tf.contrib.crf.crf_log_likelihood(
-    #         logits, labels, seq_length, crf_params
-    #     )
-    #     loss = tf.reduce_sum(-log_likelihood)
-
-    print('#' * 20)
-    print('shape of output_layer:', embedding.shape)
-    print('hidden_size:%d' % hidden_size)
-    print('seq_length:%d' % seq_length)
-    print('shape of logit', logits.shape)
-    print('shape of loss', loss.shape)
-    print('num labels:%d' % num_labels)
-    print('#' * 20)
-    return (loss, logits, trans, pred_ids)
-
-
-    ##########
-    # with tf.variable_scope("loss"):
-    #     if is_training:
-    #         output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
-    #     # FC 层进行分类
-    #     output_layer = tf.reshape(output_layer, [-1, hidden_size])
-    #     print('output_lay.shape=', output_layer.shape)
-    #     logits = tf.matmul(output_layer, output_weight, transpose_b=True)
-    #     logits = tf.nn.bias_add(logits, output_bias)
-    #     logits = tf.reshape(logits, [-1, FLAGS.max_seq_length, 11])
-    #     # mask = tf.cast(input_mask,tf.float32)
-    #     # loss = tf.contrib.seq2seq.sequence_loss(logits,labels,mask)
-    #     # return (loss, logits, predict)
-    #     ##########################################################################
-    #     log_probs = tf.nn.log_softmax(logits, axis=-1)
-    #     one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-    #     per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
-    #     loss = tf.reduce_sum(per_example_loss)
-    #     probabilities = tf.nn.softmax(logits, axis=-1)
-    #     predict = tf.argmax(probabilities,axis=-1)
-    #     return (loss, per_example_loss, logits, predict)
-    #     ##########################################################################
+    blstm_crf = BLSTM_CRF(embedded_chars=embedding, hidden_unit=FLAGS.lstm_size, cell_type='lstm', num_layers=FLAGS.num_layers,
+                          droupout_rate=FLAGS.droupout_rate, initializers=initializers, num_labels=num_labels, seq_length=max_seq_length,
+                          labels=labels, lengths=lengths, is_training=is_training)
+    rst = blstm_crf.add_blstm_crf_layer()
+    return rst
 
 
 def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
@@ -677,8 +554,8 @@ def main(_):
     processors = {
         "ner": NerProcessor
     }
-    if not FLAGS.do_train and not FLAGS.do_eval:
-        raise ValueError("At least one of `do_train` or `do_eval` must be True.")
+#     if not FLAGS.do_train and not FLAGS.do_eval:
+#         raise ValueError("At least one of `do_train` or `do_eval` must be True.")
 
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
@@ -687,12 +564,6 @@ def main(_):
             "Cannot use sequence length %d because the BERT model "
             "was only trained up to sequence length %d" %
             (FLAGS.max_seq_length, bert_config.max_position_embeddings))
-
-    if FLAGS.clean:
-        if os.path.exists(os.path.exists(FLAGS.output_dir)):
-            os.removedirs(FLAGS.output_dir)
-        if os.path.exists(FLAGS.data_config_path):
-            os.remove(FLAGS.data_config_path)
 
     task_name = FLAGS.task_name.lower()
     if task_name not in processors:
@@ -828,7 +699,7 @@ def main(_):
         if os.path.exists(token_path):
             os.remove(token_path)
 
-        with codecs.open('./output/label2id.pkl', 'rb') as rf:
+        with codecs.open(os.path.join(FLAGS.output_dir, 'label2id.pkl'), 'rb') as rf:
             label2id = pickle.load(rf)
             id2label = {value: key for key, value in label2id.items()}
 
@@ -867,24 +738,29 @@ def main(_):
         result = estimator.predict(input_fn=predict_input_fn)
         output_predict_file = os.path.join(FLAGS.output_dir, "label_test.txt")
 
-        def result_to_json():
-            pass
+#         def result_to_json():
+#             pass
 
-        print('*' * 20)
-        print('type of result:%s, type of predict_examples:%s' % (type(result), type(predict_examples)))
-        print('*' * 20)
-        with codecs.open(output_predict_file, 'w', encoding='utf-8') as writer:
+#         with codecs.open(output_predict_file, 'w', encoding='utf-8') as writer:
+#             for predict_line, prediction in zip(predict_examples, result):
+#                 writer.write(predict_line.text + '\n')
+#                 output_line = "\n".join(id2label[id] for id in prediction if id != 0) + "\n"
+#                 writer.write(output_line + '\n')
+        def result_to_json(writer):
             for predict_line, prediction in zip(predict_examples, result):
-                writer.write(predict_line.text + '\n')
-                output_line = "\n".join(id2label[id] for id in prediction if id != 0) + "\n"
-                writer.write(output_line + '\n')
+                idx = 0
+                line = ''
+                for id in prediction:
+                    if id == 0:
+                        continue
+                    curr_labels = id2label[id]
+                    if curr_labels in ['[CLS]', '[SEP]']:
+                        continue
+                    line += predict_line.text[idx] + '\t' + predict_line.label[idx] + '\t' + curr_labels +  '\n'
+                writer.write(line + '\n')
 
-
-def data_load():
-    processer = NerProcessor()
-    processer.get_labels()
-    processer.get_train_examples(FLAGS.data_dir)
-    print()
+        with codecs.open(output_predict_file, 'w', encoding='utf-8') as writer:
+            result_to_json(writer)
 
 
 if __name__ == "__main__":
@@ -897,5 +773,3 @@ if __name__ == "__main__":
     # flags.FLAGS.set_default('do_eval', False)
     # flags.FLAGS.set_default('do_predict', True)
     tf.app.run()
-
-    # data_load()
