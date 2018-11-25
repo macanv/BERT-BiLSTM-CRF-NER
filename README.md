@@ -18,7 +18,7 @@ Try to implement NER work based on google's BERT code and BiLSTM-CRF network!
 #### 1.using config param in terminal
 
 ```
-  python3 BERT_NER.py   \
+  python3 bert_lstm_ner.py   \
                   --task_name="NER"  \ 
                   --do_train=True   \
                   --do_eval=True   \
