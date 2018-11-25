@@ -33,7 +33,7 @@ Try to implement NER work based on google's BERT code and BiLSTM-CRF network!
                   --num_train_epochs=3.0   \
                   --output_dir=./output/result_dir/ 
  ```       
- ####2. replace the BERT path and project path in BERT_NER.py
+ #### 2. replace the BERT path and project path in BERT_NER.py
  ```
  if os.name == 'nt':
     bert_path = '{your BERT model path}'
@@ -44,10 +44,11 @@ else:
  ```
 
 ## result:
-#### in dev data set:
+all params using default
+#### In dev data set:
 ![](/picture1.png)
 
-#### in test data set
+#### In test data set
 ![](/picture2.png)
 
 ## reference: 

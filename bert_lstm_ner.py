@@ -31,7 +31,7 @@ from tensorflow.python.ops import math_ops
 import tf_metrics
 import pickle
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 flags = tf.flags
@@ -44,7 +44,7 @@ if os.name == 'nt':
     root_path = 'C:\workspace\python\BERT-NER'
 else:
     bert_path = '/home/macan/ml/data/chinese_L-12_H-768_A-12/'
-    root_path = '/home/macan/ml/workspace/BERT-NER'
+    root_path = '/home/macan/ml/workspace/BERT-BiLSMT-CRF-NER2'
 
 flags.DEFINE_string(
     "data_dir", os.path.join(root_path, 'NERdata'),
@@ -80,10 +80,8 @@ flags.DEFINE_integer(
     "max_seq_length", 128,
     "The maximum total input sequence length after WordPiece tokenization."
 )
-
-flags.DEFINE_bool(
-    "do_train", True,
-    "Whether to run training."
+flags.DEFINE_boolean('clean', True, 'remove the files which create from last training')
+flags.DEFINE_bool("do_train", True, "Whether to run training."
 )
 flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
 
@@ -99,7 +97,7 @@ flags.DEFINE_integer("predict_batch_size", 8, "Total batch size for predict.")
 
 flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 
-flags.DEFINE_float("num_train_epochs", 3.0, "Total number of training epochs to perform.")
+flags.DEFINE_float("num_train_epochs", 5, "Total number of training epochs to perform.")
 
 flags.DEFINE_float(
     "warmup_proportion", 0.1,
@@ -475,7 +473,7 @@ def create_model(bert_config, is_training, input_ids, input_mask,
     def project_layer_bilstm(lstm_outputs, name=None):
         """
         hidden layer between lstm layer and logits
-        :param lstm_outputs: [batch_size, num_steps, emb_size] 
+        :param lstm_outputs: [batch_size, num_steps, emb_size]
         :return: [batch_size, num_steps, num_tags]
         """
         with tf.variable_scope("project" if not name else name):
@@ -516,7 +514,8 @@ def create_model(bert_config, is_training, input_ids, input_mask,
                 transition_params=trans,
                 sequence_lengths=lengths)
             return tf.reduce_mean(-log_likelihood), trans
-
+    if is_training:
+        embedding = tf.nn.dropout(embedding, 0.5)
     lstm_outputs = lstm_layer()
     logits = project_layer_bilstm(lstm_outputs)
     loss, trans = loss_layer(logits)
@@ -689,6 +688,12 @@ def main(_):
             "was only trained up to sequence length %d" %
             (FLAGS.max_seq_length, bert_config.max_position_embeddings))
 
+    if FLAGS.clean:
+        if os.path.exists(os.path.exists(FLAGS.output_dir)):
+            os.removedirs(FLAGS.output_dir)
+        if os.path.exists(FLAGS.data_config_path):
+            os.remove(FLAGS.data_config_path)
+
     task_name = FLAGS.task_name.lower()
     if task_name not in processors:
         raise ValueError("Task not found: %s" % (task_name))
@@ -805,7 +810,7 @@ def main(_):
             seq_length=FLAGS.max_seq_length,
             is_training=False,
             drop_remainder=eval_drop_remainder)
-        result = estimator.evaluate(input_fn=eval_input_fn, steps=eval_steps)
+        result = estimator.evaluate(input_fn=eval_input_fn)
         output_eval_file = os.path.join(FLAGS.output_dir, "eval_results.txt")
         with codecs.open(output_eval_file, "w", encoding='utf-8') as writer:
             tf.logging.info("***** Eval results *****")
@@ -851,7 +856,7 @@ def main(_):
         predict_steps = None
         if FLAGS.use_tpu:
             predict_steps = int(len(predict_examples) / FLAGS.eval_batch_size)
-        predicted_result = estimator.evaluate(input_fn=predict_input_fn, steps=predict_steps)
+        predicted_result = estimator.evaluate(input_fn=predict_input_fn)
         output_eval_file = os.path.join(FLAGS.output_dir, "predicted_results.txt")
         with codecs.open(output_eval_file, "w", encoding='utf-8') as writer:
             tf.logging.info("***** Predict results *****")
@@ -894,5 +899,3 @@ if __name__ == "__main__":
     tf.app.run()
 
     # data_load()
-
-
