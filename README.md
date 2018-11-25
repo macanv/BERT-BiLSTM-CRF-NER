@@ -53,6 +53,7 @@ all params using default
 
 ## reference: 
 + The evaluation codes come from:https://github.com/guillaumegenthial/tf_metrics/blob/master/tf_metrics/__init__.py
+
 + [https://github.com/google-research/bert](https://github.com/google-research/bert)
       
 + [https://github.com/kyzhouhzau/BERT-NER](https://github.com/kyzhouhzau/BERT-NER)
@@ -60,4 +61,3 @@ all params using default
 + [https://github.com/zjy-ucas/ChineseNER](https://github.com/zjy-ucas/ChineseNER)
 
 > Any problem please email me(ma_cancan@163.com)
-
