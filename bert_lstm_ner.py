@@ -79,9 +79,9 @@ flags.DEFINE_integer(
     "The maximum total input sequence length after WordPiece tokenization."
 )
 
-flags.DEFINE_bool(
-    "do_train", True,
-    "Whether to run training."
+flags.DEFINE_boolean('clean', True, 'remove the files which created by last training')
+
+flags.DEFINE_bool("do_train", True, "Whether to run training."
 )
 flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
 
@@ -572,6 +572,21 @@ def main(_):
             "was only trained up to sequence length %d" %
             (FLAGS.max_seq_length, bert_config.max_position_embeddings))
 
+    if FLAGS.clean:
+        if os.path.exists(FLAGS.output_dir):
+            try:
+                os.removedirs(FLAGS.output_dir)
+            except Exception as e:
+                print(e)
+                print('pleace remove the files of output dir and data.conf')
+                exit(-1)
+        if os.path.exists(FLAGS.data_config_path):
+            try:
+                os.remove(FLAGS.data_config_path)
+            except Exception as e:
+                print(e)
+                print('pleace remove the files of output dir and data.conf')
+                exit(-1)
     task_name = FLAGS.task_name.lower()
     if task_name not in processors:
         raise ValueError("Task not found: %s" % (task_name))
@@ -789,5 +804,5 @@ if __name__ == "__main__":
     # flags.FLAGS.set_default('do_train', False)
     # flags.FLAGS.set_default('do_eval', False)
     # flags.FLAGS.set_default('do_predict', True)
-    # tf.app.run()
-    load_data()
+    tf.app.run()
+    # load_data()
