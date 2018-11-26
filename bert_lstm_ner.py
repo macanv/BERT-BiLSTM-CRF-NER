@@ -39,7 +39,7 @@ FLAGS = flags.FLAGS
 
 if os.name == 'nt':
     bert_path = 'H:\迅雷下载\chinese_L-12_H-768_A-12\chinese_L-12_H-768_A-12'
-    root_path = 'C:\workspace\python\BERT-NER'
+    root_path = r'C:\workspace\python\BERT-BiLSMT-CRF-NER'
 else:
     bert_path = '/home/macan/ml/data/chinese_L-12_H-768_A-12/'
     root_path = '/home/macan/ml/workspace/BERT-NER'
@@ -123,6 +123,8 @@ flags.DEFINE_string('data_config_path', os.path.join(root_path, 'data.conf'),
 # lstm parame
 flags.DEFINE_integer('lstm_size', 128, 'size of lstm units')
 flags.DEFINE_integer('num_layers', 1, 'number of rnn layers, default is 1')
+flags.DEFINE_string('cell', 'lstm', 'which rnn cell used')
+
 
 
 
@@ -179,17 +181,20 @@ class DataProcessor(object):
             labels = []
             for line in f:
                 contends = line.strip()
-                word = line.strip().split(' ')[0]
-                label = line.strip().split(' ')[-1]
+                tokens = contends.split(' ')
+                if len(tokens) == 2:
+                    word = line.strip().split(' ')[0]
+                    label = line.strip().split(' ')[-1]
+                else:
+                    if len(contends) == 0:
+                        l = ' '.join([label for label in labels if len(label) > 0])
+                        w = ' '.join([word for word in words if len(word) > 0])
+                        lines.append([l, w])
+                        words = []
+                        labels = []
+                        continue
                 if contends.startswith("-DOCSTART-"):
                     words.append('')
-                    continue
-                if len(contends) == 0 and words[-1] == '。':
-                    l = ' '.join([label for label in labels if len(label) > 0])
-                    w = ' '.join([word for word in words if len(word) > 0])
-                    lines.append([l, w])
-                    words = []
-                    labels = []
                     continue
                 words.append(word)
                 labels.append(label)
@@ -220,6 +225,8 @@ class NerProcessor(DataProcessor):
             guid = "%s-%s" % (set_type, i)
             text = tokenization.convert_to_unicode(line[1])
             label = tokenization.convert_to_unicode(line[0])
+            if i == 0:
+                print(label)
             examples.append(InputExample(guid=guid, text=text, label=label))
         return examples
 
@@ -438,9 +445,9 @@ def create_model(bert_config, is_training, input_ids, input_mask,
     used = tf.sign(tf.abs(input_ids))
     lengths = tf.reduce_sum(used, reduction_indices=1)  # [batch_size] 大小的向量，包含了当前batch中的序列长度
 
-    blstm_crf = BLSTM_CRF(embedded_chars=embedding, hidden_unit=FLAGS.lstm_size, cell_type='lstm', num_layers=FLAGS.num_layers,
-                          droupout_rate=FLAGS.droupout_rate, initializers=initializers, num_labels=num_labels, seq_length=max_seq_length,
-                          labels=labels, lengths=lengths, is_training=is_training)
+    blstm_crf = BLSTM_CRF(embedded_chars=embedding, hidden_unit=FLAGS.lstm_size, cell_type=FLAGS.cell, num_layers=FLAGS.num_layers,
+                          droupout_rate=FLAGS.droupout_rate, initializers=initializers, num_labels=num_labels,
+                          seq_length=max_seq_length, labels=labels, lengths=lengths, is_training=is_training)
     rst = blstm_crf.add_blstm_crf_layer()
     return rst
 
@@ -738,31 +745,41 @@ def main(_):
         result = estimator.predict(input_fn=predict_input_fn)
         output_predict_file = os.path.join(FLAGS.output_dir, "label_test.txt")
 
-#         def result_to_json():
-#             pass
-
-#         with codecs.open(output_predict_file, 'w', encoding='utf-8') as writer:
-#             for predict_line, prediction in zip(predict_examples, result):
-#                 writer.write(predict_line.text + '\n')
-#                 output_line = "\n".join(id2label[id] for id in prediction if id != 0) + "\n"
-#                 writer.write(output_line + '\n')
-        def result_to_json(writer):
+        def result_to_pair(writer):
             for predict_line, prediction in zip(predict_examples, result):
                 idx = 0
                 line = ''
+                line_token = str(predict_line.text).split(' ')
+                label_token = str(predict_line.label).split(' ')
+                if len(line_token) != len(label_token):
+                    tf.logging.info(predict_line.text)
+                    tf.logging.info(predict_line.label)
                 for id in prediction:
                     if id == 0:
                         continue
                     curr_labels = id2label[id]
                     if curr_labels in ['[CLS]', '[SEP]']:
                         continue
-                    line += predict_line.text[idx] + '\t' + predict_line.label[idx] + '\t' + curr_labels +  '\n'
+                    # 不知道为什么，这里会出现idx out of range 的错误。。。do not know why here cache list out of range exception!
+                    try:
+                        line += line_token[idx] + '\t' + label_token[idx] + '\t' + curr_labels +  '\n'
+                    except Exception as e:
+                        tf.logging.info(e)
+                        tf.logging.info(predict_line.text)
+                        tf.logging.info(predict_line.label)
+                        line = ''
+                        break
+                    idx += 1
                 writer.write(line + '\n')
 
         with codecs.open(output_predict_file, 'w', encoding='utf-8') as writer:
-            result_to_json(writer)
+            result_to_pair(writer)
 
-
+def load_data():
+    processer = NerProcessor()
+    processer.get_labels()
+    example = processer.get_train_examples(FLAGS.data_dir)
+    print()
 if __name__ == "__main__":
     flags.mark_flag_as_required("data_dir")
     flags.mark_flag_as_required("task_name")
@@ -772,4 +789,5 @@ if __name__ == "__main__":
     # flags.FLAGS.set_default('do_train', False)
     # flags.FLAGS.set_default('do_eval', False)
     # flags.FLAGS.set_default('do_predict', True)
-    tf.app.run()
+    # tf.app.run()
+    load_data()

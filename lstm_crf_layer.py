@@ -45,6 +45,7 @@ class BLSTM_CRF(object):
         :return: 
         """
         if self.is_training:
+            # lstm input dropout rate i set 0.9 will get best score
             self.embedded_chars = tf.nn.dropout(self.embedded_chars, self.droupout_rate)
         #blstm
         lstm_output = self.blstm_layer(self.embedded_chars)
