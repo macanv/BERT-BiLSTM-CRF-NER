@@ -15,16 +15,17 @@ from __future__ import print_function
 import collections
 import os
 import json
+import logging
+
 
 import tensorflow as tf
 import codecs
 from tensorflow.contrib.layers.python.layers import initializers
-
+from tensorflow.contrib import estimator
 from bert import modeling
 from bert import optimization
 from bert import tokenization
 from lstm_crf_layer import BLSTM_CRF
-
 
 import tf_metrics
 import pickle
@@ -35,7 +36,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 flags = tf.flags
 
 FLAGS = flags.FLAGS
-
 
 if os.name == 'nt':
     bert_path = 'H:\迅雷下载\chinese_L-12_H-768_A-12\chinese_L-12_H-768_A-12'
@@ -144,7 +144,6 @@ class InputExample(object):
         self.guid = guid
         self.text = text
         self.label = label
-
 
 class InputFeatures(object):
     """A single set of features of data."""
@@ -572,7 +571,8 @@ def main(_):
             "was only trained up to sequence length %d" %
             (FLAGS.max_seq_length, bert_config.max_position_embeddings))
 
-    if FLAGS.clean:
+    # 在train 的时候，才删除上一轮产出的文件，在predicted 的时候不做clean
+    if FLAGS.clean and FLAGS.do_train:
         if os.path.exists(FLAGS.output_dir):
             try:
                 os.removedirs(FLAGS.output_dir)
@@ -703,12 +703,12 @@ def main(_):
             seq_length=FLAGS.max_seq_length,
             is_training=False,
             drop_remainder=eval_drop_remainder)
-        result = estimator.evaluate(input_fn=eval_input_fn)
+        result = estimator.evaluate(input_fn=eval_input_fn, steps=eval_steps)
         output_eval_file = os.path.join(FLAGS.output_dir, "eval_results.txt")
         with codecs.open(output_eval_file, "w", encoding='utf-8') as writer:
             tf.logging.info("***** Eval results *****")
             for key in sorted(result.keys()):
-                tf.logging.info("  %s = %s", key, str(result[key]))
+                tf.logging.warning("  %s = %s", key, str(result[key]))
                 writer.write("%s = %s\n" % (key, str(result[key])))
 
     # 保存数据的配置文件，避免在以后的训练过程中多次读取训练以及测试数据集，消耗时间
@@ -745,10 +745,6 @@ def main(_):
             is_training=False,
             drop_remainder=predict_drop_remainder)
 
-        # 计算效果得分
-        predict_steps = None
-        if FLAGS.use_tpu:
-            predict_steps = int(len(predict_examples) / FLAGS.eval_batch_size)
         predicted_result = estimator.evaluate(input_fn=predict_input_fn)
         output_eval_file = os.path.join(FLAGS.output_dir, "predicted_results.txt")
         with codecs.open(output_eval_file, "w", encoding='utf-8') as writer:
@@ -777,7 +773,7 @@ def main(_):
                         continue
                     # 不知道为什么，这里会出现idx out of range 的错误。。。do not know why here cache list out of range exception!
                     try:
-                        line += line_token[idx] + '\t' + label_token[idx] + '\t' + curr_labels +  '\n'
+                        line += line_token[idx] + ' ' + label_token[idx] + ' ' + curr_labels + '\n'
                     except Exception as e:
                         tf.logging.info(e)
                         tf.logging.info(predict_line.text)
@@ -789,6 +785,10 @@ def main(_):
 
         with codecs.open(output_predict_file, 'w', encoding='utf-8') as writer:
             result_to_pair(writer)
+        from conlleval import return_report
+        eval_result = return_report(output_predict_file)
+        print(eval_result)
+
 
 def load_data():
     processer = NerProcessor()
