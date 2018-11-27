@@ -1,11 +1,13 @@
 # BERT-BiLSMT-CRF-NER
 Tensorflow solution of NER task Using BiLSTM-CRF model with Google BERT Fine-tuning
 
-使用谷歌的BERT模型在BLSTM-CRF模型上进行预训练用于中文命名实体识别的Tensorflow代码
+使用谷歌的BERT模型在BLSTM-CRF模型上进行预训练用于中文命名实体识别的Tensorflow代码'
 
-The Chinese training data($PATH/NERdata/) from:https://github.com/zjy-ucas/ChineseNER 
+Welcome to star this repository!
+
+The Chinese training data($PATH/NERdata/) come from:https://github.com/zjy-ucas/ChineseNER 
   
-The CoNLL-2003 data($PATH/NERdata/ori/) from:https://github.com/kyzhouhzau/BERT-NER 
+The CoNLL-2003 data($PATH/NERdata/ori/) come from:https://github.com/kyzhouhzau/BERT-NER 
   
 The evaluation codes come from:https://github.com/guillaumegenthial/tf_metrics/blob/master/tf_metrics/__init__.py  
 
