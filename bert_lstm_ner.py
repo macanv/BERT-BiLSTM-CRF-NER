@@ -42,7 +42,7 @@ if os.name == 'nt':
     root_path = r'C:\workspace\python\BERT-BiLSMT-CRF-NER'
 else:
     bert_path = '/home/macan/ml/data/chinese_L-12_H-768_A-12/'
-    root_path = '/home/macan/ml/workspace/BERT-NER'
+    root_path = '/home/macan/ml/workspace/BERT-BiLSMT-CRF-NER'
 
 flags.DEFINE_string(
     "data_dir", os.path.join(root_path, 'NERdata'),
@@ -574,8 +574,16 @@ def main(_):
     # 在train 的时候，才删除上一轮产出的文件，在predicted 的时候不做clean
     if FLAGS.clean and FLAGS.do_train:
         if os.path.exists(FLAGS.output_dir):
+            def del_file(path):
+                ls = os.listdir(path)
+                for i in ls:
+                    c_path = os.path.join(path, i)
+                    if os.path.isdir(c_path):
+                        del_file(c_path)
+                    else:
+                        os.remove(c_path)
             try:
-                os.removedirs(FLAGS.output_dir)
+                del_file(FLAGS.output_dir)
             except Exception as e:
                 print(e)
                 print('pleace remove the files of output dir and data.conf')
@@ -708,7 +716,7 @@ def main(_):
         with codecs.open(output_eval_file, "w", encoding='utf-8') as writer:
             tf.logging.info("***** Eval results *****")
             for key in sorted(result.keys()):
-                tf.logging.warning("  %s = %s", key, str(result[key]))
+                tf.logging.info("  %s = %s", key, str(result[key]))
                 writer.write("%s = %s\n" % (key, str(result[key])))
 
     # 保存数据的配置文件，避免在以后的训练过程中多次读取训练以及测试数据集，消耗时间
