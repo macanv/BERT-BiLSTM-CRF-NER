@@ -30,7 +30,7 @@ from lstm_crf_layer import BLSTM_CRF
 import tf_metrics
 import pickle
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 flags = tf.flags
@@ -42,7 +42,7 @@ if os.name == 'nt':
     root_path = r'C:\workspace\python\BERT-BiLSMT-CRF-NER'
 else:
     bert_path = '/home/macan/ml/data/chinese_L-12_H-768_A-12/'
-    root_path = '/home/macan/ml/workspace/BERT-BiLSMT-CRF-NER'
+    root_path = '/home/macan/ml/workspace/BERT-BiLSTM-CRF-NER'
 
 flags.DEFINE_string(
     "data_dir", os.path.join(root_path, 'NERdata'),
@@ -97,7 +97,7 @@ flags.DEFINE_integer("predict_batch_size", 8, "Total batch size for predict.")
 
 flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 
-flags.DEFINE_float("num_train_epochs", 3.0, "Total number of training epochs to perform.")
+flags.DEFINE_float("num_train_epochs", 15.0, "Total number of training epochs to perform.")
 flags.DEFINE_float('droupout_rate', 0.5, 'Dropout rate')
 flags.DEFINE_float('clip', 5, 'Gradient clip')
 flags.DEFINE_float(
@@ -445,9 +445,9 @@ def create_model(bert_config, is_training, input_ids, input_mask,
     lengths = tf.reduce_sum(used, reduction_indices=1)  # [batch_size] 大小的向量，包含了当前batch中的序列长度
 
     blstm_crf = BLSTM_CRF(embedded_chars=embedding, hidden_unit=FLAGS.lstm_size, cell_type=FLAGS.cell, num_layers=FLAGS.num_layers,
-                          droupout_rate=FLAGS.droupout_rate, initializers=initializers, num_labels=num_labels,
+                          dropout_rate=FLAGS.droupout_rate, initializers=initializers, num_labels=num_labels,
                           seq_length=max_seq_length, labels=labels, lengths=lengths, is_training=is_training)
-    rst = blstm_crf.add_blstm_crf_layer()
+    rst = blstm_crf.add_blstm_crf_layer(crf_only=False)
     return rst
 
 
@@ -504,12 +504,12 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         tf.logging.info("**** Trainable Variables ****")
 
         # 打印加载模型的参数
-        for var in tvars:
-            init_string = ""
-            if var.name in initialized_variable_names:
-                init_string = ", *INIT_FROM_CKPT*"
-            tf.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
-                            init_string)
+#         for var in tvars:
+#             init_string = ""
+#             if var.name in initialized_variable_names:
+#                 init_string = ", *INIT_FROM_CKPT*"
+#             tf.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
+#                             init_string)
         output_spec = None
         if mode == tf.estimator.ModeKeys.TRAIN:
             train_op = optimization.create_optimizer(
@@ -804,11 +804,11 @@ def load_data():
     example = processer.get_train_examples(FLAGS.data_dir)
     print()
 if __name__ == "__main__":
-    flags.mark_flag_as_required("data_dir")
-    flags.mark_flag_as_required("task_name")
-    flags.mark_flag_as_required("vocab_file")
-    flags.mark_flag_as_required("bert_config_file")
-    flags.mark_flag_as_required("output_dir")
+#     flags.mark_flag_as_required("data_dir")
+#     flags.mark_flag_as_required("task_name")
+#     flags.mark_flag_as_required("vocab_file")
+#     flags.mark_flag_as_required("bert_config_file")
+#     flags.mark_flag_as_required("output_dir")
     # flags.FLAGS.set_default('do_train', False)
     # flags.FLAGS.set_default('do_eval', False)
     # flags.FLAGS.set_default('do_predict', True)

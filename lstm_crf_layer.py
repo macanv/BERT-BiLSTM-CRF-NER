@@ -10,8 +10,8 @@ from tensorflow.contrib import rnn
 from tensorflow.contrib import crf
 
 class BLSTM_CRF(object):
-    def __init__(self, embedded_chars, hidden_unit, cell_type,num_layers, droupout_rate,
-                 initializers,num_labels, seq_length, labels, lengths, is_training):
+    def __init__(self, embedded_chars, hidden_unit, cell_type, num_layers, dropout_rate,
+                 initializers, num_labels, seq_length, labels, lengths, is_training):
         """
         BLSTM-CRF 网络
         :param embedded_chars: Fine-tuning embedding input
@@ -27,7 +27,7 @@ class BLSTM_CRF(object):
         :param is_training: 是否是训练过程
         """
         self.hidden_unit = hidden_unit
-        self.droupout_rate = droupout_rate
+        self.dropout_rate = dropout_rate
         self.cell_type = cell_type
         self.num_layers = num_layers
         self.embedded_chars = embedded_chars
@@ -36,21 +36,25 @@ class BLSTM_CRF(object):
         self.num_labels = num_labels
         self.labels = labels
         self.lengths = lengths
-
+        self.embedding_dims = embedded_chars.shape[-1].value
         self.is_training = is_training
 
-    def add_blstm_crf_layer(self):
+    def add_blstm_crf_layer(self, crf_only):
         """
         blstm-crf网络
         :return: 
         """
         if self.is_training:
-            # lstm input dropout rate set 0.5 will get best score
-            self.embedded_chars = tf.nn.dropout(self.embedded_chars, self.droupout_rate)
-        #blstm
-        lstm_output = self.blstm_layer(self.embedded_chars)
-        #project
-        logits = self.project_bilstm_layer(lstm_output)
+            # lstm input dropout rate i set 0.9 will get best score
+            self.embedded_chars = tf.nn.dropout(self.embedded_chars, self.dropout_rate)
+
+        if crf_only:
+            logits = self.project_crf_layer(self.embedded_chars)
+        else:
+            #blstm
+            lstm_output = self.blstm_layer(self.embedded_chars)
+            #project
+            logits = self.project_bilstm_layer(lstm_output)
         #crf
         loss, trans = self.crf_layer(logits)
         # CRF decode, pred_ids 是一条最大概率的标注路径
@@ -68,8 +72,8 @@ class BLSTM_CRF(object):
         elif self.cell_type == 'gru':
             cell_tmp = rnn.GRUCell(self.hidden_unit)
         # 是否需要进行dropout
-        if self.droupout_rate is not None:
-            cell_tmp = rnn.DropoutWrapper(cell_tmp, output_keep_prob=self.droupout_rate)
+        if self.dropout_rate is not None:
+            cell_tmp = rnn.DropoutWrapper(cell_tmp, output_keep_prob=self.dropout_rate)
         return cell_tmp
 
     def _bi_dir_rnn(self):
@@ -79,9 +83,9 @@ class BLSTM_CRF(object):
         """
         cell_fw = self._witch_cell()
         cell_bw = self._witch_cell()
-        if self.droupout_rate is not None:
-            cell_bw = rnn.DropoutWrapper(cell_bw, output_keep_prob=self.droupout_rate)
-            cell_fw = rnn.DropoutWrapper(cell_fw, output_keep_prob=self.droupout_rate)
+        if self.dropout_rate is not None:
+            cell_bw = rnn.DropoutWrapper(cell_bw, output_keep_prob=self.dropout_rate)
+            cell_fw = rnn.DropoutWrapper(cell_fw, output_keep_prob=self.dropout_rate)
         return cell_fw, cell_bw
     def blstm_layer(self, embedding_chars):
         """
@@ -124,6 +128,23 @@ class BLSTM_CRF(object):
                                     initializer=tf.zeros_initializer())
 
                 pred = tf.nn.xw_plus_b(hidden, W, b)
+            return tf.reshape(pred, [-1, self.seq_length, self.num_labels])
+
+    def project_crf_layer(self, embedding_chars, name=None):
+        """
+        hidden layer between input layer and logits
+        :param lstm_outputs: [batch_size, num_steps, emb_size] 
+        :return: [batch_size, num_steps, num_tags]
+        """
+        with tf.variable_scope("project" if not name else name):
+            with tf.variable_scope("logits"):
+                W = tf.get_variable("W", shape=[self.embedding_dims, self.num_labels],
+                                    dtype=tf.float32, initializer=self.initializers.xavier_initializer())
+
+                b = tf.get_variable("b", shape=[self.num_labels], dtype=tf.float32,
+                                    initializer=tf.zeros_initializer())
+                output = tf.reshape(self.embedded_chars, shape=[-1, self.embedding_dims]) #[batch_size, embedding_dims]
+                pred = tf.tanh(tf.nn.xw_plus_b(output, W, b))
             return tf.reshape(pred, [-1, self.seq_length, self.num_labels])
 
     def crf_layer(self, logits):
