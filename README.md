@@ -14,10 +14,25 @@ The evaluation codes come from:https://github.com/guillaumegenthial/tf_metrics/b
 
 Try to implement NER work based on google's BERT code and BiLSTM-CRF network!
 
-
+### add crf only model
+Just alter bert_lstm_crf.py line 450, the params of the function of add_blstm_crf_layer: crf_only=True or False
+ONLY CRF output layer:
+```
+    blstm_crf = BLSTM_CRF(embedded_chars=embedding, hidden_unit=FLAGS.lstm_size, cell_type=FLAGS.cell, num_layers=FLAGS.num_layers,
+                          dropout_rate=FLAGS.droupout_rate, initializers=initializers, num_labels=num_labels,
+                          seq_length=max_seq_length, labels=labels, lengths=lengths, is_training=is_training)
+    rst = blstm_crf.add_blstm_crf_layer(crf_only=True)
+```
+BiLSTM with CRF output layer
+```
+    blstm_crf = BLSTM_CRF(embedded_chars=embedding, hidden_unit=FLAGS.lstm_size, cell_type=FLAGS.cell, num_layers=FLAGS.num_layers,
+                          dropout_rate=FLAGS.droupout_rate, initializers=initializers, num_labels=num_labels,
+                          seq_length=max_seq_length, labels=labels, lengths=lengths, is_training=is_training)
+    rst = blstm_crf.add_blstm_crf_layer(crf_only=False)
+```
 ## How to train
 
-#### 1.using config param in terminal
+#### using config param in terminal
 
 ```
   python3 bert_lstm_ner.py   \
@@ -35,7 +50,7 @@ Try to implement NER work based on google's BERT code and BiLSTM-CRF network!
                   --num_train_epochs=3.0   \
                   --output_dir=./output/result_dir/ 
  ```       
- #### 2. replace the BERT path and project path in bert_lstm_ner.py.py
+ #### OR replace the BERT path and project path in bert_lstm_ner.py.py
  ```
  if os.name == 'nt':
     bert_path = '{your BERT model path}'
