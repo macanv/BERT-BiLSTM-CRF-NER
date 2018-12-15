@@ -770,10 +770,13 @@ def main(_):
                 line = ''
                 line_token = str(predict_line.text).split(' ')
                 label_token = str(predict_line.label).split(' ')
+                len_seq = len(label_token)
                 if len(line_token) != len(label_token):
                     tf.logging.info(predict_line.text)
                     tf.logging.info(predict_line.label)
                 for id in prediction:
+                    if idx > len_seq:
+                        break
                     if id == 0:
                         continue
                     curr_labels = id2label[id]
@@ -790,12 +793,14 @@ def main(_):
                         break
                     idx += 1
                 writer.write(line + '\n')
-
+        # 将模型预测的结果和原始标签写入到文件中，以空格分开，使用conevel.py脚本来预测entity level 的结果并且输出
         with codecs.open(output_predict_file, 'w', encoding='utf-8') as writer:
             result_to_pair(writer)
         from conlleval import return_report
         eval_result = return_report(output_predict_file)
-        print(eval_result)
+        print(''.join(eval_result))
+        with codecs.open(os.path.join(FLAGS.output_dir, 'entity_level_predicted_result.txt')) as fd:
+            fd.write(''.join(eval_result))
 
 
 def load_data():
