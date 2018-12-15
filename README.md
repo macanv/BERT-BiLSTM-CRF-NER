@@ -71,6 +71,11 @@ all params using default
 #### In test data set
 ![](/picture2.png)
 
+#### entity leval result:
+last two result are label level result, the entitly level result in code of line 796-798,this result will be output in predict process.
+show my entitl level result :
+![](/03E18A6A9C16082CF22A9E8837F7E35F.png)
+
 ## reference: 
 + The evaluation codes come from:https://github.com/guillaumegenthial/tf_metrics/blob/master/tf_metrics/__init__.py
 
