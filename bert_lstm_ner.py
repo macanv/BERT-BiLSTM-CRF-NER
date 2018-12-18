@@ -799,7 +799,7 @@ def main(_):
         from conlleval import return_report
         eval_result = return_report(output_predict_file)
         print(''.join(eval_result))
-        with codecs.open(os.path.join(FLAGS.output_dir, 'entity_level_predicted_result.txt')) as fd:
+        with codecs.open(os.path.join(FLAGS.output_dir, 'entity_level_predicted_result.txt'), 'a', encoding='utf-8') as fd:
             fd.write(''.join(eval_result))
 
 
