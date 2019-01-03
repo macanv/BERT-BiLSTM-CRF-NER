@@ -151,7 +151,7 @@ def strage_combined_link_org_loc(tokens, tags):
     eval = Result(params)
     if len(tokens) > len(tags):
         tokens = tokens[:len(tags)]
-    loc, person, org = eval.get_result(tokens, tags)
+    person, loc, org = eval.get_result(tokens, tags)
     print_output(loc, 'LOC')
     print_output(person, 'PER')
     print_output(org, 'ORG')
