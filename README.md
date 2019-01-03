@@ -48,6 +48,10 @@ else: # linux path config
     bert_path = '{your BERT model path}'
     root_path = '{project path}'
  ```
+ Than Run:
+ ```angular2html
+python3 bert_lstm_ner.py
+```
 
 ### USING BLSTM-CRF OR ONLY CRF FOR DECODE!
 Just alter bert_lstm_ner.py line of 450, the params of the function of add_blstm_crf_layer: crf_only=True or False  
@@ -69,18 +73,18 @@ BiLSTM with CRF output layer
     rst = blstm_crf.add_blstm_crf_layer(crf_only=False)
 ```
 
-## result:
+## Result:
 all params using default
 #### In dev data set:
-![](/pictures/picture1.png)
+![](./pictures/picture1.png)
 
 #### In test data set
-![](/pictures/picture2.png)
+![](./pictures/picture2.png)
 
 #### entity leval result:
 last two result are label level result, the entitly level result in code of line 796-798,this result will be output in predict process.
 show my entity level result :
-![](/pictures/03E18A6A9C16082CF22A9E8837F7E35F.png)
+![](./pictures/03E18A6A9C16082CF22A9E8837F7E35F.png)
 > my model can download from baidu cloud:  
 >链接：https://pan.baidu.com/s/1GfDFleCcTv5393ufBYdgqQ 提取码：4cus
 
@@ -89,7 +93,7 @@ If model is train finished, just run
 ```angular2html
 python3 terminal_predict.py
 ```
-![](/pictures/predict.png)
+![](./pictures/predict.png)
  
 ## reference: 
 + The evaluation codes come from:https://github.com/guillaumegenthial/tf_metrics/blob/master/tf_metrics/__init__.py
