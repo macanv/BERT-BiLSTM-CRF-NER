@@ -30,7 +30,7 @@ from lstm_crf_layer import BLSTM_CRF
 import tf_metrics
 import pickle
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 flags = tf.flags
@@ -447,7 +447,7 @@ def create_model(bert_config, is_training, input_ids, input_mask,
     blstm_crf = BLSTM_CRF(embedded_chars=embedding, hidden_unit=FLAGS.lstm_size, cell_type=FLAGS.cell, num_layers=FLAGS.num_layers,
                           dropout_rate=FLAGS.droupout_rate, initializers=initializers, num_labels=num_labels,
                           seq_length=max_seq_length, labels=labels, lengths=lengths, is_training=is_training)
-    rst = blstm_crf.add_blstm_crf_layer(crf_only=False)
+    rst = blstm_crf.add_blstm_crf_layer(crf_only=True)
     return rst
 
 
@@ -753,13 +753,13 @@ def main(_):
             is_training=False,
             drop_remainder=predict_drop_remainder)
 
-        predicted_result = estimator.evaluate(input_fn=predict_input_fn)
-        output_eval_file = os.path.join(FLAGS.output_dir, "predicted_results.txt")
-        with codecs.open(output_eval_file, "w", encoding='utf-8') as writer:
-            tf.logging.info("***** Predict results *****")
-            for key in sorted(predicted_result.keys()):
-                tf.logging.info("  %s = %s", key, str(predicted_result[key]))
-                writer.write("%s = %s\n" % (key, str(predicted_result[key])))
+        # predicted_result = estimator.evaluate(input_fn=predict_input_fn)
+        # output_eval_file = os.path.join(FLAGS.output_dir, "predicted_results.txt")
+        # with codecs.open(output_eval_file, "w", encoding='utf-8') as writer:
+        #     tf.logging.info("***** Predict results *****")
+        #     for key in sorted(predicted_result.keys()):
+        #         tf.logging.info("  %s = %s", key, str(predicted_result[key]))
+        #         writer.write("%s = %s\n" % (key, str(predicted_result[key])))
 
         result = estimator.predict(input_fn=predict_input_fn)
         output_predict_file = os.path.join(FLAGS.output_dir, "label_test.txt")
