@@ -15,8 +15,6 @@ from __future__ import print_function
 import collections
 import os
 import json
-import logging
-
 
 import tensorflow as tf
 import codecs
@@ -823,6 +821,7 @@ def main(_):
 
 def get_last_checkpoint(model_path):
     if not os.path.exists(os.path.join(model_path, 'checkpoint')):
+        tf.logging.info('checkpoint file not exits:'.format(os.path.join(model_path, 'checkpoint')))
         return None
     last = None
     with codecs.open(os.path.join(model_path, 'checkpoint'), 'r', encoding='utf-8') as fd:
@@ -842,7 +841,7 @@ def adam_filter(model_path):
     :param model_path: 
     :return: 
     """
-    last_name = get_last_checkpoint(FLAGS.output_path)
+    last_name = get_last_checkpoint(model_path)
     if last_name is None:
         return
     sess = tf.Session()
@@ -857,17 +856,7 @@ def adam_filter(model_path):
 
 
 if __name__ == "__main__":
-#     flags.mark_flag_as_required("data_dir")
-#     flags.mark_flag_as_required("task_name")
-#     flags.mark_flag_as_required("vocab_file")
-#     flags.mark_flag_as_required("bert_config_file")
-#     flags.mark_flag_as_required("output_dir")
-    # flags.FLAGS.set_default('do_train', False)
-    # flags.FLAGS.set_default('do_eval', False)
-    # flags.FLAGS.set_default('do_predict', True)
     tf.app.run()
-    # load_data()
-
     # filter model
     if FLAGS.filter_adam_var:
-        adam_filter(FLAGS.output_path)
+        adam_filter(FLAGS.output_dir)

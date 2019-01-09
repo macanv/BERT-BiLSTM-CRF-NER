@@ -10,6 +10,7 @@ import numpy as np
 import codecs
 import pickle
 import os
+from datetime import time, timedelta, datetime
 
 from bert_lstm_ner import create_model, InputFeatures, InputExample
 from bert import tokenization
@@ -93,6 +94,7 @@ def predict_online():
         while True:
             print('input the test sentence:')
             sentence = str(input())
+            start = datetime.now()
             if len(sentence) < 2:
                 print(sentence)
                 continue
@@ -110,6 +112,7 @@ def predict_online():
             print(pred_label_result)
             #todo: 组合策略
             result = strage_combined_link_org_loc(sentence, pred_label_result[0])
+            print('time used: {} sec'.format((datetime.now() - start).seconds))
 
 def convert_id_to_label(pred_ids_result, idx2label):
     """
