@@ -19,10 +19,17 @@ Try to implement NER work based on google's BERT code and BiLSTM-CRF network!
 
 ## How to train
 #### 1. Download BERT chinese model :  
- https://storage.googleapis.com/bert_models/2018_11_03/chinese_L-12_H-768_A-12.zip  
- 
-#### 2. train model
+ ```
+ wget https://storage.googleapis.com/bert_models/2018_11_03/chinese_L-12_H-768_A-12.zip  
+ ```
+#### 2. create output dir
+create output path in project path:
+```angular2html
+mkdir output
+```
+#### 3. Train model
 
+##### first method 
 ```
   python3 bert_lstm_ner.py   \
                   --task_name="NER"  \ 
@@ -39,7 +46,7 @@ Try to implement NER work based on google's BERT code and BiLSTM-CRF network!
                   --num_train_epochs=3.0   \
                   --output_dir=./output/result_dir/ 
  ```       
- #### OR replace the BERT path and project path in bert_lstm_ner.py
+ ##### OR replace the BERT path and project path in bert_lstm_ner.py
  ```
  if os.name == 'nt': #windows path config
     bert_path = '{your BERT model path}'
@@ -95,6 +102,39 @@ python3 terminal_predict.py
 ```
 ![](./pictures/predict.png)
  
+ ## Using yourself data to train
+ if you want to use yourself data to train ner model,you just modify  the get_labes func.
+ ```angular2html
+def get_labels(self):
+        return ["O", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "X", "[CLS]", "[SEP]"]
+```
+NOTE: "X", “[CLS]”, “[SEP]” These three are necessary, you just replace your data label to this return list.  
+Or you can use last code lets the program automatically get the label from training data
+```angular2html
+def get_labels(self):
+        # 通过读取train文件获取标签的方法会出现一定的风险。
+        if os.path.exists(os.path.join(FLAGS.output_dir, 'label_list.pkl')):
+            with codecs.open(os.path.join(FLAGS.output_dir, 'label_list.pkl'), 'rb') as rf:
+                self.labels = pickle.load(rf)
+        else:
+            if len(self.labels) > 0:
+                self.labels = self.labels.union(set(["X", "[CLS]", "[SEP]"]))
+                with codecs.open(os.path.join(FLAGS.output_dir, 'label_list.pkl'), 'wb') as rf:
+                    pickle.dump(self.labels, rf)
+            else:
+                self.labels = ["O", 'B-TIM', 'I-TIM', "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "X", "[CLS]", "[SEP]"]
+        return self.labels
+
+```
+
+
+## NEW UPDATE
+2019.1.9: Add code to remove the adam related parameters in the model, and reduce the size of the model file from 1.3GB to 400MB.  
+  
+2019.1.3: Add online predict code  
+
+
+
 ## reference: 
 + The evaluation codes come from:https://github.com/guillaumegenthial/tf_metrics/blob/master/tf_metrics/__init__.py
 

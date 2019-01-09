@@ -30,7 +30,7 @@ from lstm_crf_layer import BLSTM_CRF
 import tf_metrics
 import pickle
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 flags = tf.flags
@@ -125,6 +125,11 @@ flags.DEFINE_integer('lstm_size', 128, 'size of lstm units')
 flags.DEFINE_integer('num_layers', 1, 'number of rnn layers, default is 1')
 flags.DEFINE_string('cell', 'lstm', 'which rnn cell used')
 
+# 移除模型中的Adam相关参数，使得最终模型文件为300-400M， 不会是原来的1.2G， 移除后的模型可以用于预测阶段。
+#Add code to remove the adam related parameters in the model, and reduce the size of the model file from 1.3GB to 400MB.
+# https://github.com/google-research/bert/issues/99
+# If  True last model'adam related parameters will be removed, False not
+flags.DEFINE_boolean('filter_adam_var', True, 'remove all the adam variables of model')
 
 
 
@@ -263,8 +268,10 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
     for (i, label) in enumerate(label_list, 1):
         label_map[label] = i
     # 保存label->index 的map
-    with codecs.open(os.path.join(FLAGS.output_dir, 'label2id.pkl'), 'wb') as w:
-        pickle.dump(label_map, w)
+    if not os.path.exists(os.path.join(FLAGS.output_dir, 'label2id.pkl')):
+        with codecs.open(os.path.join(FLAGS.output_dir, 'label2id.pkl'), 'wb') as w:
+            pickle.dump(label_map, w)
+
     textlist = example.text.split(' ')
     labellist = example.label.split(' ')
     tokens = []
@@ -784,6 +791,8 @@ def main(_):
                         continue
                     curr_labels = id2label[id]
                     if curr_labels in ['[CLS]', '[SEP]']:
+                        if curr_labels == '[SEP]':
+                            break
                         continue
                     # 不知道为什么，这里会出现idx out of range 的错误。。。do not know why here cache list out of range exception!
                     try:
@@ -806,11 +815,47 @@ def main(_):
             fd.write(''.join(eval_result))
 
 
-def load_data():
-    processer = NerProcessor()
-    processer.get_labels()
-    example = processer.get_train_examples(FLAGS.data_dir)
-    print()
+# def load_data():
+#     processer = NerProcessor()
+#     processer.get_labels()
+#     example = processer.get_train_examples(FLAGS.data_dir)
+#     print()
+
+def get_last_checkpoint(model_path):
+    if not os.path.exists(os.path.join(model_path, 'checkpoint')):
+        return None
+    last = None
+    with codecs.open(os.path.join(model_path, 'checkpoint'), 'r', encoding='utf-8') as fd:
+        for line in fd:
+            line = line.strip().split(':')
+            if len(line) != 2:
+                continue
+            if line[0] == 'model_checkpoint_path':
+                last = line[1][2:-1]
+                break
+    return last
+
+
+def adam_filter(model_path):
+    """
+    去掉模型中的Adam相关参数，这些参数在测试的时候是没有用的
+    :param model_path: 
+    :return: 
+    """
+    last_name = get_last_checkpoint(FLAGS.output_path)
+    if last_name is None:
+        return
+    sess = tf.Session()
+    imported_meta = tf.train.import_meta_graph(os.path.join(model_path, last_name + '.meta'))
+    imported_meta.restore(sess, os.path.join(model_path, last_name))
+    need_vars = []
+    for var in tf.global_variables():
+        if 'adam_v' not in var.name and 'adam_m' not in var.name:
+            need_vars.append(var)
+    saver = tf.train.Saver(need_vars)
+    saver.save(sess, os.path.join(model_path, 'model.ckpt'))
+
+
 if __name__ == "__main__":
 #     flags.mark_flag_as_required("data_dir")
 #     flags.mark_flag_as_required("task_name")
@@ -822,3 +867,7 @@ if __name__ == "__main__":
     # flags.FLAGS.set_default('do_predict', True)
     tf.app.run()
     # load_data()
+
+    # filter model
+    if FLAGS.filter_adam_var:
+        adam_filter(FLAGS.output_path)
