@@ -17,6 +17,113 @@ The evaluation codes come from:https://github.com/guillaumegenthial/tf_metrics/b
 Try to implement NER work based on google's BERT code and BiLSTM-CRF network!
 This project may be more close to process Chinese data. but other language only need Modify a small amount of code.
 
+THIS PROJECT ONLY SUPPORT Python3.
+you can install this project by:  
+```
+pip install bert-base -i https://pypi.python.org/simple
+```
+OR
+```angular2html
+git clone https://github.com/macanv/BERT-BiLSTM-CRF-NER
+cd BERT-BiLSTM-CRF-NER/
+python3 setup.py install
+```
+## Train model:
+You can use -help to view the relevant parameters of the training named entity recognition model, where data_dir, bert_config_file, output_dir, init_checkpoint, vocab_file must be specified.
+```angular2html
+bert-base-ner-train -help
+```
+![](./pictures/ner_help.png)
+train/dev/test dataset is like this:
+```angular2html
+海 O
+钓 O
+比 O
+赛 O
+地 O
+点 O
+在 O
+厦 B-LOC
+门 I-LOC
+与 O
+金 B-LOC
+门 I-LOC
+之 O
+间 O
+的 O
+海 O
+域 O
+。 O
+```
+The first one of each line is a token, the second is token's label, and the line is divided by a blank line. The maximum length of each sentence is [max_seq_length] params.
+run train cmd:
+```angular2html
+bert-base-ner-train \
+    -data_dir {your dataset dir}\
+    -output_dir {training output dir}\
+    -init_checkpoint {Google BERT model dir}\
+    -bert_config_file {bert_config.json under the Google BERT model dir} \
+    -vocab_file {vocab.txt under the Google BERT model dir}
+```
+after training ,the ner model will be saved in {OUTPUT_DIR}
+
+## As Service
+Many server and client code comes from excellent open source projects: [bert as service of hanxiao](https://github.com/hanxiao/bert-as-service) If my code violates any license agreement, please let me know and I will correct it the first time.
+and NER server/client service code can be applied to other tasks with simple modifications, such as text categorization, which I will provide later.
+Welcome to submit your request, if you want to share it on Github or my work.  
+
+You can use -help to view the relevant parameters of the NER as Service:
+which ner_model_dir, bert_model_dir is need
+```
+bert-base-serving-start -help
+```
+![](./pictures/server_help.png)
+
+and than you can using below cmd start ner service:
+```angular2html
+bert-base-serving-start \
+    -ner_model_dir C:\workspace\python\BERT_Base\output\ner2 \
+    -bert_model_dir F:\chinese_L-12_H-768_A-12
+```
+as you see:   
+mode: If mode is NER, then the service identified by the named entity will be started. If it is BERT, it will be the same as the [bert as service] project.  
+bert_model_dir: bert_model_dir is a BERT model, you can download from https://github.com/google-research/bert
+ner_model_dir: your ner model checkpoint dir
+model_pd_dir: model freeze save dir, after run optimize func, there will contains like ner_model.pb binary file  
+
+and you can see that service starting info:
+![](./pictures/service_1.png)
+![](./pictures/service_2.png)
+you can using below code test client:  
+```angular2html
+import time
+from client.client import BertClient
+
+ner_model_dir = 'C:\workspace\python\BERT_Base\output\predict_ner'
+with BertClient( ner_model_dir=ner_model_dir, show_server_config=False, check_version=False, check_length=False, mode='NER') as bc:
+    start_t = time.perf_counter()
+    str = '1月24日，新华社对外发布了中央对雄安新区的指导意见，洋洋洒洒1.2万多字，17次提到北京，4次提到天津，信息量很大，其实也回答了人们关心的很多问题。'
+    rst = bc.encode([str, str])
+    print('rst:', rst)
+    print(time.perf_counter() - start_t)
+```
+you can see this after run the above code:
+![](./pictures/server_ner_rst.png)
+
+
+  
+    
+      
+  
+  
+  
+
+
+
+
+
+
+<font color=#A52A2A size=72>The following tutorial is an old version and will be removed in the future.</font>
 ## How to train
 #### 1. Download BERT chinese model :  
  ```
@@ -104,9 +211,7 @@ python3 terminal_predict.py
 ![](./pictures/predict.png)
  
  ## Using NER as Service
-Many server and client code comes from excellent open source projects: [bert as service of hanxiao](https://github.com/hanxiao/bert-as-service) If my code violates any license agreement, please let me know and I will correct it the first time.
-and NER server/client service code can be applied to other tasks with simple modifications, such as text categorization, which I will provide later.
-Welcome to submit your request, if you want to share it on Github or my work.
+
 #### Service 
 Using NER as Service is simple, you just need to run the python script below in the project root path:
 ```angular2html
@@ -117,11 +222,7 @@ python3 runs.py \
     -model_pd_dir /home/macan/ml/workspace/BERT_Base/output/predict_optimizer \
     -num_worker 8
 ```
-as you see:   
-mode: If mode is NER, then the service identified by the named entity will be started. If it is BERT, it will be the same as the [bert as service] project.  
-bert_model_dir: bert_model_dir is a BERT model, you can download from https://github.com/google-research/bert
-ner_model_dir: your ner model checkpoint dir
-model_pd_dir: model freeze save dir, after run optimize func, there will contains like ner_model.pb binary file  
+
   
 You can download my ner model from：https://pan.baidu.com/s/1m9VcueQ5gF-TJc00sFD88w, ex_code: guqq  
 Set ner_mode.pb to model_pd_dir, and set other file to ner_model_dir and than run last cmd  
