@@ -17,10 +17,12 @@ The evaluation codes come from:https://github.com/guillaumegenthial/tf_metrics/b
 Try to implement NER work based on google's BERT code and BiLSTM-CRF network!
 This project may be more close to process Chinese data. but other language only need Modify a small amount of code.
 
-THIS PROJECT ONLY SUPPORT Python3.
-you can install this project by:  
+THIS PROJECT ONLY SUPPORT Python3.  
+###################################################################
+## Download project and install  
+You can install this project by:  
 ```
-pip install bert-base -i https://pypi.python.org/simple
+pip install bert-base==0.0.2 -i https://pypi.python.org/simple
 ```
 OR
 ```angular2html
@@ -33,9 +35,11 @@ You can use -help to view the relevant parameters of the training named entity r
 ```angular2html
 bert-base-ner-train -help
 ```
-![](./pictures/ner_help.png)
+![](./pictures/ner_help.png)  
+  
+
 train/dev/test dataset is like this:
-```angular2html
+```
 海 O
 钓 O
 比 O
@@ -90,14 +94,17 @@ mode: If mode is NER, then the service identified by the named entity will be st
 bert_model_dir: bert_model_dir is a BERT model, you can download from https://github.com/google-research/bert
 ner_model_dir: your ner model checkpoint dir
 model_pd_dir: model freeze save dir, after run optimize func, there will contains like ner_model.pb binary file  
-
-and you can see that service starting info:
+>You can download my ner model from：https://pan.baidu.com/s/1m9VcueQ5gF-TJc00sFD88w, ex_code: guqq  
+Set ner_mode.pb to model_pd_dir, and set other file to ner_model_dir  
+You can see below service starting info:
 ![](./pictures/service_1.png)
 ![](./pictures/service_2.png)
+
+  
 you can using below code test client:  
 ```angular2html
 import time
-from client.client import BertClient
+from bert_base.client import BertClient
 
 ner_model_dir = 'C:\workspace\python\BERT_Base\output\predict_ner'
 with BertClient( ner_model_dir=ner_model_dir, show_server_config=False, check_version=False, check_length=False, mode='NER') as bc:
@@ -110,20 +117,9 @@ with BertClient( ner_model_dir=ner_model_dir, show_server_config=False, check_ve
 you can see this after run the above code:
 ![](./pictures/server_ner_rst.png)
 
-
   
-    
-      
-  
-  
-  
+# The following tutorial is an old version and will be removed in the future.
 
-
-
-
-
-
-<font color=#A52A2A size=72>The following tutorial is an old version and will be removed in the future.</font>
 ## How to train
 #### 1. Download BERT chinese model :  
  ```

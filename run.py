@@ -12,14 +12,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import argparse
-import sys
+
 # sys.path.append('.')
 
 
 def start_server():
-    from server.server import BertServer
-    from server.helper import get_run_args
+    from bert_base.server import BertServer
+    from bert_base.server.helper import get_run_args
 
     args = get_run_args()
     print(args)

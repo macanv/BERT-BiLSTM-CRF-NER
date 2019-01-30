@@ -12,18 +12,14 @@ import pickle
 import os
 from datetime import datetime
 
-from train.bert_lstm_ner import create_model, InputFeatures
-from bert import tokenization
-from bert import modeling
+from bert_base.train.models import create_model, InputFeatures
+from bert_base.bert import tokenization, modeling
+from bert_base.train.train_helper import get_args_parser
+args = get_args_parser()
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+model_dir = 'C:\workspace\python\BERT_Base\output\predict_ner'
+bert_dir = 'F:\chinese_L-12_H-768_A-12'
 
-flags = tf.flags
-
-FLAGS = flags.FLAGS
-
-# init mode and session
-# move something codes outside of function, so that this code will run only once during online prediction when predict_online is invoked.
 is_training=False
 use_one_hot_embeddings=False
 batch_size=1
@@ -36,16 +32,17 @@ model=None
 global graph
 input_ids_p, input_mask_p, label_ids_p, segment_ids_p = None, None, None, None
 
-print('checkpoint path:{}'.format(os.path.join(FLAGS.output_dir, "checkpoint")))
-if not os.path.exists(os.path.join(FLAGS.output_dir, "checkpoint")):
+
+print('checkpoint path:{}'.format(os.path.join(model_dir, "checkpoint")))
+if not os.path.exists(os.path.join(model_dir, "checkpoint")):
     raise Exception("failed to get checkpoint. going to return ")
 
 # 加载label->id的词典
-with codecs.open(os.path.join(FLAGS.output_dir, 'label2id.pkl'), 'rb') as rf:
+with codecs.open(os.path.join(model_dir, 'label2id.pkl'), 'rb') as rf:
     label2id = pickle.load(rf)
     id2label = {value: key for key, value in label2id.items()}
 
-with codecs.open(os.path.join(FLAGS.output_dir, 'label_list.pkl'), 'rb') as rf:
+with codecs.open(os.path.join(model_dir, 'label_list.pkl'), 'rb') as rf:
     label_list = pickle.load(rf)
 num_labels = len(label_list) + 1
 
@@ -53,23 +50,20 @@ graph = tf.get_default_graph()
 with graph.as_default():
     print("going to restore checkpoint")
     #sess.run(tf.global_variables_initializer())
-    input_ids_p = tf.placeholder(tf.int32, [batch_size, FLAGS.max_seq_length], name="input_ids")
-    input_mask_p = tf.placeholder(tf.int32, [batch_size, FLAGS.max_seq_length], name="input_mask")
-    label_ids_p = tf.placeholder(tf.int32, [batch_size, FLAGS.max_seq_length], name="label_ids")
-    segment_ids_p = tf.placeholder(tf.int32, [batch_size, FLAGS.max_seq_length], name="segment_ids")
+    input_ids_p = tf.placeholder(tf.int32, [batch_size, args.max_seq_length], name="input_ids")
+    input_mask_p = tf.placeholder(tf.int32, [batch_size, args.max_seq_length], name="input_mask")
 
-    bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
+    bert_config = modeling.BertConfig.from_json_file(os.path.join(bert_dir, 'bert_config.json'))
     (total_loss, logits, trans, pred_ids) = create_model(
-        bert_config, is_training, input_ids_p, input_mask_p, segment_ids_p,
-        label_ids_p, num_labels, use_one_hot_embeddings)
+        bert_config=bert_config, is_training=False, input_ids=input_ids_p, input_mask=input_mask_p, segment_ids=None,
+        labels=None, num_labels=num_labels, use_one_hot_embeddings=False, dropout_rate=0.0)
 
     saver = tf.train.Saver()
-    saver.restore(sess, tf.train.latest_checkpoint(FLAGS.output_dir))
+    saver.restore(sess, tf.train.latest_checkpoint(model_dir))
 
 
 tokenizer = tokenization.FullTokenizer(
-        vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
-
+        vocab_file=os.path.join(bert_dir, 'vocab.txt'), do_lower_case=args.do_lower_case)
 
 
 def predict_online():
@@ -81,11 +75,11 @@ def predict_online():
     :return:
     """
     def convert(line):
-        feature = convert_single_example(0, line, label_list, FLAGS.max_seq_length, tokenizer, 'p')
-        input_ids = np.reshape([feature.input_ids],(batch_size, FLAGS.max_seq_length))
-        input_mask = np.reshape([feature.input_mask],(batch_size, FLAGS.max_seq_length))
-        segment_ids = np.reshape([feature.segment_ids],(batch_size, FLAGS.max_seq_length))
-        label_ids =np.reshape([feature.label_ids],(batch_size, FLAGS.max_seq_length))
+        feature = convert_single_example(0, line, label_list, args.max_seq_length, tokenizer, 'p')
+        input_ids = np.reshape([feature.input_ids],(batch_size, args.max_seq_length))
+        input_mask = np.reshape([feature.input_mask],(batch_size, args.max_seq_length))
+        segment_ids = np.reshape([feature.segment_ids],(batch_size, args.max_seq_length))
+        label_ids =np.reshape([feature.label_ids],(batch_size, args.max_seq_length))
         return input_ids, input_mask, segment_ids, label_ids
 
     global graph
@@ -103,16 +97,14 @@ def predict_online():
             input_ids, input_mask, segment_ids, label_ids = convert(sentence)
 
             feed_dict = {input_ids_p: input_ids,
-                         input_mask_p: input_mask,
-                         segment_ids_p:segment_ids,
-                         label_ids_p:label_ids}
+                         input_mask_p: input_mask}
             # run session get current feed_dict result
             pred_ids_result = sess.run([pred_ids], feed_dict)
             pred_label_result = convert_id_to_label(pred_ids_result, id2label)
             print(pred_label_result)
             #todo: 组合策略
             result = strage_combined_link_org_loc(sentence, pred_label_result[0])
-            print('time used: {} sec'.format((datetime.now() - start).seconds))
+            print('time used: {} sec'.format((datetime.now() - start).total_seconds()))
 
 def convert_id_to_label(pred_ids_result, idx2label):
     """
@@ -176,8 +168,8 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
     for (i, label) in enumerate(label_list, 1):
         label_map[label] = i
     # 保存label->index 的map
-    if not os.path.exists(os.path.join(FLAGS.output_dir, 'label2id.pkl')):
-        with codecs.open(os.path.join(FLAGS.output_dir, 'label2id.pkl'), 'wb') as w:
+    if not os.path.exists(os.path.join(model_dir, 'label2id.pkl')):
+        with codecs.open(os.path.join(model_dir, 'label2id.pkl'), 'wb') as w:
             pickle.dump(label_map, w)
 
     tokens = example

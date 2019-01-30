@@ -7,7 +7,7 @@
  @File    : client_test.py
 """
 import time
-from client.client import BertClient
+from bert_base.client import BertClient
 
 ner_model_dir = 'C:\workspace\python\BERT_Base\output\predict_ner'
 with BertClient( ner_model_dir=ner_model_dir, show_server_config=False, check_version=False, check_length=False, mode='NER') as bc:

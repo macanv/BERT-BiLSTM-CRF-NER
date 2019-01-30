@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 # print(__version__)
 setup(
     name='bert_base',
-    version='0.0.1',
+    version='0.0.2',
     description='Use Google\'s BERT for Chinese natural language processing tasks such as named entity recognition and provide server services',
     url='https://github.com/macanv/BERT-BiLSTM-CRF-NER',
     long_description=open('README.md', 'r', encoding='utf-8').read(),
@@ -40,8 +40,8 @@ setup(
         #'Topic :: Scientific/Engineering :: Artificial Intelligence :: Natural Language Processing :: Named Entity Recognition',
     ),
     entry_points={
-        'console_scripts': ['bert-base-serving-start=runs:start_server',
-                            'bert-base-ner-train=runs:train_ner'],
+        'console_scripts': ['bert-base-serving-start=bert_base.runs:start_server',
+                            'bert-base-ner-train=bert_base.runs:train_ner'],
     },
     keywords='bert nlp ner NER named entity recognition bilstm crf tensorflow machine learning sentence encoding embedding serving',
 )
