@@ -86,7 +86,9 @@ def convert_by_vocab(vocab, items):
   """Converts a sequence of [tokens|ids] using the vocab."""
   output = []
   for item in items:
-    output.append(vocab[item])
+    #TODO: modify for oov, using [unk] replace, if you using english language do not change this
+    # output.append(vocab.[item])
+    output.append(vocab.get(item, 100))
   return output
 
 

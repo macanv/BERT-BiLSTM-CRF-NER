@@ -15,7 +15,7 @@ The evaluation codes come from:https://github.com/guillaumegenthial/tf_metrics/b
 
 
 Try to implement NER work based on google's BERT code and BiLSTM-CRF network!
-
+This project may be more close to process Chinese data. but other language only need Modify a small amount of code.
 
 ## How to train
 #### 1. Download BERT chinese model :  
@@ -93,7 +93,8 @@ last two result are label level result, the entitly level result in code of line
 show my entity level result :
 ![](./pictures/03E18A6A9C16082CF22A9E8837F7E35F.png)
 > my model can download from baidu cloud:  
->链接：https://pan.baidu.com/s/1GfDFleCcTv5393ufBYdgqQ 提取码：4cus
+>链接：https://pan.baidu.com/s/1GfDFleCcTv5393ufBYdgqQ 提取码：4cus  
+NOTE: My model is trained by crf_only params
 
 ## ONLINE PREDICT
 If model is train finished, just run
@@ -102,6 +103,48 @@ python3 terminal_predict.py
 ```
 ![](./pictures/predict.png)
  
+ ## Using NER as Service
+Many server and client code comes from excellent open source projects: [bert as service of hanxiao](https://github.com/hanxiao/bert-as-service) If my code violates any license agreement, please let me know and I will correct it the first time.
+and NER server/client service code can be applied to other tasks with simple modifications, such as text categorization, which I will provide later.
+Welcome to submit your request, if you want to share it on Github or my work.
+#### Service 
+Using NER as Service is simple, you just need to run the python script below in the project root path:
+```angular2html
+python3 runs.py \ 
+    -mode NER
+    -bert_model_dir /home/macan/ml/data/chinese_L-12_H-768_A-12 \
+    -ner_model_dir /home/macan/ml/data/bert_ner \
+    -model_pd_dir /home/macan/ml/workspace/BERT_Base/output/predict_optimizer \
+    -num_worker 8
+```
+as you see:   
+mode: If mode is NER, then the service identified by the named entity will be started. If it is BERT, it will be the same as the [bert as service] project.  
+bert_model_dir: bert_model_dir is a BERT model, you can download from https://github.com/google-research/bert
+ner_model_dir: your ner model checkpoint dir
+model_pd_dir: model freeze save dir, after run optimize func, there will contains like ner_model.pb binary file  
+  
+You can download my ner model from：https://pan.baidu.com/s/1m9VcueQ5gF-TJc00sFD88w, ex_code: guqq  
+Set ner_mode.pb to model_pd_dir, and set other file to ner_model_dir and than run last cmd  
+![](./pictures/service_1.png)
+![](./pictures/service_2.png)
+
+
+#### Client
+The client using methods can reference client_test.py script
+```angular2html
+import time
+from client.client import BertClient
+
+ner_model_dir = 'C:\workspace\python\BERT_Base\output\predict_ner'
+with BertClient( ner_model_dir=ner_model_dir, show_server_config=False, check_version=False, check_length=False, mode='NER') as bc:
+    start_t = time.perf_counter()
+    str = '1月24日，新华社对外发布了中央对雄安新区的指导意见，洋洋洒洒1.2万多字，17次提到北京，4次提到天津，信息量很大，其实也回答了人们关心的很多问题。'
+    rst = bc.encode([str])
+    print('rst:', rst)
+    print(time.perf_counter() - start_t)
+```
+NOTE: input format you can sometime reference bert as service project.    
+Welcome to provide more client language code like java or others.  
  ## Using yourself data to train
  if you want to use yourself data to train ner model,you just modify  the get_labes func.
  ```angular2html
@@ -129,6 +172,8 @@ def get_labels(self):
 
 
 ## NEW UPDATE
+2019.1.30 Add Service/Client for NER process  
+
 2019.1.9: Add code to remove the adam related parameters in the model, and reduce the size of the model file from 1.3GB to 400MB.  
   
 2019.1.3: Add online predict code  
@@ -144,4 +189,5 @@ def get_labels(self):
 
 + [https://github.com/zjy-ucas/ChineseNER](https://github.com/zjy-ucas/ChineseNER)
 
-> Any problem please email me(ma_cancan@163.com)
++ [https://github.com/hanxiao/bert-as-service](https://github.com/hanxiao/bert-as-service)
+> Any problem please open issue OR email me(ma_cancan@163.com)

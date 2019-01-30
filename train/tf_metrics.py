@@ -11,6 +11,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.ops.metrics_impl import _streaming_confusion_matrix
 
+__all__ = ['precision', 'recall', 'f1', 'fbeta', 'safe_div', 'pr_re_fbeta', 'pr_re_fbeta', 'metrics_from_confusion_matrix']
+
 
 def precision(labels, predictions, num_classes, pos_indices=None,
               weights=None, average='micro'):

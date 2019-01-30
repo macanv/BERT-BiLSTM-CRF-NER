@@ -9,6 +9,7 @@ import tensorflow as tf
 from tensorflow.contrib import rnn
 from tensorflow.contrib import crf
 
+
 class BLSTM_CRF(object):
     def __init__(self, embedded_chars, hidden_unit, cell_type, num_layers, dropout_rate,
                  initializers, num_labels, seq_length, labels, lengths, is_training):
@@ -42,7 +43,7 @@ class BLSTM_CRF(object):
     def add_blstm_crf_layer(self, crf_only):
         """
         blstm-crf网络
-        :return: 
+        :return:
         """
         if self.is_training:
             # lstm input dropout rate i set 0.9 will get best score
@@ -51,11 +52,11 @@ class BLSTM_CRF(object):
         if crf_only:
             logits = self.project_crf_layer(self.embedded_chars)
         else:
-            #blstm
+            # blstm
             lstm_output = self.blstm_layer(self.embedded_chars)
-            #project
+            # project
             logits = self.project_bilstm_layer(lstm_output)
-        #crf
+        # crf
         loss, trans = self.crf_layer(logits)
         # CRF decode, pred_ids 是一条最大概率的标注路径
         pred_ids, _ = crf.crf_decode(potentials=logits, transition_params=trans, sequence_length=self.lengths)
@@ -64,16 +65,13 @@ class BLSTM_CRF(object):
     def _witch_cell(self):
         """
         RNN 类型
-        :return: 
+        :return:
         """
         cell_tmp = None
         if self.cell_type == 'lstm':
-            cell_tmp = rnn.BasicLSTMCell(self.hidden_unit)
+            cell_tmp = rnn.LSTMCell(self.hidden_unit)
         elif self.cell_type == 'gru':
             cell_tmp = rnn.GRUCell(self.hidden_unit)
-        # 是否需要进行dropout
-        if self.dropout_rate is not None:
-            cell_tmp = rnn.DropoutWrapper(cell_tmp, output_keep_prob=self.dropout_rate)
         return cell_tmp
 
     def _bi_dir_rnn(self):
@@ -83,12 +81,15 @@ class BLSTM_CRF(object):
         """
         cell_fw = self._witch_cell()
         cell_bw = self._witch_cell()
+        if self.dropout_rate is not None and self.is_training:
+            cell_bw = rnn.DropoutWrapper(cell_bw, output_keep_prob=self.dropout_rate)
+            cell_fw = rnn.DropoutWrapper(cell_fw, output_keep_prob=self.dropout_rate)
         return cell_fw, cell_bw
-    
+
     def blstm_layer(self, embedding_chars):
         """
-                
-        :return: 
+
+        :return:
         """
         with tf.variable_scope('rnn_layer'):
             cell_fw, cell_bw = self._bi_dir_rnn()
@@ -104,7 +105,7 @@ class BLSTM_CRF(object):
     def project_bilstm_layer(self, lstm_outputs, name=None):
         """
         hidden layer between lstm layer and logits
-        :param lstm_outputs: [batch_size, num_steps, emb_size] 
+        :param lstm_outputs: [batch_size, num_steps, emb_size]
         :return: [batch_size, num_steps, num_tags]
         """
         with tf.variable_scope("project" if not name else name):
@@ -131,7 +132,7 @@ class BLSTM_CRF(object):
     def project_crf_layer(self, embedding_chars, name=None):
         """
         hidden layer between input layer and logits
-        :param lstm_outputs: [batch_size, num_steps, emb_size] 
+        :param lstm_outputs: [batch_size, num_steps, emb_size]
         :return: [batch_size, num_steps, num_tags]
         """
         with tf.variable_scope("project" if not name else name):
@@ -141,7 +142,8 @@ class BLSTM_CRF(object):
 
                 b = tf.get_variable("b", shape=[self.num_labels], dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
-                output = tf.reshape(self.embedded_chars, shape=[-1, self.embedding_dims]) #[batch_size, embedding_dims]
+                output = tf.reshape(self.embedded_chars,
+                                    shape=[-1, self.embedding_dims])  # [batch_size, embedding_dims]
                 pred = tf.tanh(tf.nn.xw_plus_b(output, W, b))
             return tf.reshape(pred, [-1, self.seq_length, self.num_labels])
 
@@ -156,9 +158,12 @@ class BLSTM_CRF(object):
                 "transitions",
                 shape=[self.num_labels, self.num_labels],
                 initializer=self.initializers.xavier_initializer())
-            log_likelihood, trans = tf.contrib.crf.crf_log_likelihood(
-                inputs=logits,
-                tag_indices=self.labels,
-                transition_params=trans,
-                sequence_lengths=self.lengths)
-            return tf.reduce_mean(-log_likelihood), trans
+            if self.is_training:
+                log_likelihood, trans = tf.contrib.crf.crf_log_likelihood(
+                    inputs=logits,
+                    tag_indices=self.labels,
+                    transition_params=trans,
+                    sequence_lengths=self.lengths)
+                return tf.reduce_mean(-log_likelihood), trans
+            else:
+                return None, trans

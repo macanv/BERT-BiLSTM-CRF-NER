@@ -10,9 +10,9 @@ import numpy as np
 import codecs
 import pickle
 import os
-from datetime import time, timedelta, datetime
+from datetime import datetime
 
-from bert_lstm_ner import create_model, InputFeatures, InputExample
+from train.bert_lstm_ner import create_model, InputFeatures
 from bert import tokenization
 from bert import modeling
 
