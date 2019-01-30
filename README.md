@@ -59,8 +59,9 @@ train/dev/test dataset is like this:
 域 O
 。 O
 ```
-The first one of each line is a token, the second is token's label, and the line is divided by a blank line. The maximum length of each sentence is [max_seq_length] params.
-run train cmd:
+The first one of each line is a token, the second is token's label, and the line is divided by a blank line. The maximum length of each sentence is [max_seq_length] params.  
+You can get training data from above two git repos  
+You can training ner model by running below command:  
 ```angular2html
 bert-base-ner-train \
     -data_dir {your dataset dir}\
@@ -69,7 +70,7 @@ bert-base-ner-train \
     -bert_config_file {bert_config.json under the Google BERT model dir} \
     -vocab_file {vocab.txt under the Google BERT model dir}
 ```
-after training ,the ner model will be saved in {OUTPUT_DIR}
+After training model, the NER model will be saved in {output_dir} which you special above cmd line.  
 
 ## As Service
 Many server and client code comes from excellent open source projects: [bert as service of hanxiao](https://github.com/hanxiao/bert-as-service) If my code violates any license agreement, please let me know and I will correct it the first time.
@@ -96,6 +97,7 @@ ner_model_dir: your ner model checkpoint dir
 model_pd_dir: model freeze save dir, after run optimize func, there will contains like ner_model.pb binary file  
 >You can download my ner model from：https://pan.baidu.com/s/1m9VcueQ5gF-TJc00sFD88w, ex_code: guqq  
 Set ner_mode.pb to model_pd_dir, and set other file to ner_model_dir  
+
 You can see below service starting info:
 ![](./pictures/service_1.png)
 ![](./pictures/service_2.png)
