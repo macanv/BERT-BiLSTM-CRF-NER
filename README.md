@@ -108,8 +108,7 @@ you can using below code test client:
 import time
 from bert_base.client import BertClient
 
-ner_model_dir = 'C:\workspace\python\BERT_Base\output\predict_ner'
-with BertClient( ner_model_dir=ner_model_dir, show_server_config=False, check_version=False, check_length=False, mode='NER') as bc:
+with BertClient(show_server_config=False, check_version=False, check_length=False, mode='NER') as bc:
     start_t = time.perf_counter()
     str = '1月24日，新华社对外发布了中央对雄安新区的指导意见，洋洋洒洒1.2万多字，17次提到北京，4次提到天津，信息量很大，其实也回答了人们关心的很多问题。'
     rst = bc.encode([str, str])
@@ -271,6 +270,8 @@ def get_labels(self):
 
 
 ## NEW UPDATE
+2019.1.30 Support pip install and command line control  
+
 2019.1.30 Add Service/Client for NER process  
 
 2019.1.9: Add code to remove the adam related parameters in the model, and reduce the size of the model file from 1.3GB to 400MB.  
