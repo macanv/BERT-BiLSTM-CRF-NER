@@ -39,9 +39,9 @@ def optimize_bert_graph(args, logger=None):
     if not logger:
         logger = set_logger(colored('GRAPHOPT', 'cyan'), args.verbose)
     try:
-        if not os.path.exists(args.model_pd_dir):
-            os.mkdir(args.model_pd_dir)
-        pb_file = os.path.join(args.model_pd_dir, 'bert_model.pb')
+        if not os.path.exists(args.model_pb_dir):
+            os.mkdir(args.model_pb_dir)
+        pb_file = os.path.join(args.model_pb_dir, 'bert_model.pb')
         if os.path.exists(pb_file):
             return pb_file
         # we don't need GPU for optimizing the graph
@@ -148,7 +148,7 @@ def optimize_bert_graph(args, logger=None):
             tmp_g = convert_variables_to_constants(sess, tmp_g, [n.name[:-2] for n in output_tensors],
                                                    use_fp16=args.fp16)
 
-        logger.info('write graph to a tmp file: %s' % args.model_pd_dir)
+        logger.info('write graph to a tmp file: %s' % args.model_pb_dir)
         with tf.gfile.GFile(pb_file, 'wb') as f:
             f.write(tmp_g.SerializeToString())
     except Exception:
@@ -262,16 +262,16 @@ def optimize_ner_model(args, num_labels,  logger=None):
         logger = set_logger(colored('NER_MODEL, Lodding...', 'cyan'), args.verbose)
     try:
         # 如果PB文件已经存在则，返回PB文件的路径，否则将模型转化为PB文件，并且返回存储PB文件的路径
-        if args.model_pd_dir is None:
+        if args.model_pb_dir is None:
             # 获取当前的运行路径
             tmp_file = os.path.join(os.getcwd(), 'predict_optimizer')
             if not os.path.exists(tmp_file):
                 os.mkdir(tmp_file)
         else:
-            tmp_file = args.model_pd_dir
+            tmp_file = args.model_pb_dir
         pb_file = os.path.join(tmp_file, 'ner_model.pb')
-        print('pb_file', pb_file)
         if os.path.exists(pb_file):
+            print('pb_file exits', pb_file)
             return pb_file
 
         import tensorflow as tf

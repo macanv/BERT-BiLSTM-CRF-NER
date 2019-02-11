@@ -130,8 +130,8 @@ class NerProcessor(DataProcessor):
             guid = "%s-%s" % (set_type, i)
             text = tokenization.convert_to_unicode(line[1])
             label = tokenization.convert_to_unicode(line[0])
-            if i == 0:
-                print('label: ', label)
+            # if i == 0:
+            #     print('label: ', label)
             examples.append(InputExample(guid=guid, text=text, label=label))
         return examples
 
@@ -408,10 +408,19 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
             #train_op = optimizer.optimizer(total_loss, learning_rate, num_train_steps)
             train_op = optimization.create_optimizer(
                  total_loss, learning_rate, num_train_steps, num_warmup_steps, False)
+            hook_dict = {}
+            hook_dict['loss'] = total_loss
+            hook_dict['learning_rate'] = learning_rate
+            hook_dict['global_steps'] = tf.train.get_or_create_global_step()
+            logging_hook = tf.train.LoggingTensorHook(
+                hook_dict, every_n_iter=args.save_summary_steps)
+
             output_spec = tf.estimator.EstimatorSpec(
                 mode=mode,
                 loss=total_loss,
-                train_op=train_op)
+                train_op=train_op,
+                training_hooks=[logging_hook])
+
         elif mode == tf.estimator.ModeKeys.EVAL:
             # 针对NER ,进行了修改
             def metric_fn(label_ids, pred_ids):
