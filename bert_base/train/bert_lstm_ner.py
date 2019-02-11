@@ -413,22 +413,11 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         elif mode == tf.estimator.ModeKeys.EVAL:
             # 针对NER ,进行了修改
             def metric_fn(label_ids, logits, trans):
-                # 首先对结果进行维特比解码
-                # crf 解码
-
-                weight = tf.sequence_mask(args.max_seq_length)
-                precision = tf_metrics.precision(label_ids, pred_ids, num_labels, None, weight)
-                recall = tf_metrics.recall(label_ids, pred_ids, num_labels, None, weight)
-                f = tf_metrics.f1(label_ids, pred_ids, num_labels, None, weight)
-
                 return {
-                    "eval_precision": precision,
-                    "eval_recall": recall,
-                    "eval_f": f,
                     "eval_loss": tf.metrics.mean_squared_error(labels=label_ids, predictions=pred_ids),
                 }
 
-            eval_metrics = metric_fn(label_ids, logits, trans)
+            eval_metrics = metric_fn(label_ids, pred_ids)
             output_spec = tf.estimator.EstimatorSpec(
                 mode=mode,
                 loss=total_loss,

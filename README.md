@@ -70,6 +70,14 @@ bert-base-ner-train \
     -bert_config_file {bert_config.json under the Google BERT model dir} \
     -vocab_file {vocab.txt under the Google BERT model dir}
 ```
+you can special labels using -label_list params, the project get labels from training data.  
+```angular2html
+# using , split
+-labels 'B-LOC, I-LOC ...'
+OR save label in a file like labels.txt, one line one label
+-labels labels.txt
+```    
+
 After training model, the NER model will be saved in {output_dir} which you special above cmd line.  
 
 ## As Service

@@ -81,7 +81,7 @@ class BLSTM_CRF(object):
         """
         cell_fw = self._witch_cell()
         cell_bw = self._witch_cell()
-        if self.dropout_rate is not None and self.is_training:
+        if self.dropout_rate is not None:
             cell_bw = rnn.DropoutWrapper(cell_bw, output_keep_prob=self.dropout_rate)
             cell_fw = rnn.DropoutWrapper(cell_fw, output_keep_prob=self.dropout_rate)
         return cell_fw, cell_bw
@@ -158,12 +158,10 @@ class BLSTM_CRF(object):
                 "transitions",
                 shape=[self.num_labels, self.num_labels],
                 initializer=self.initializers.xavier_initializer())
-            if self.is_training:
-                log_likelihood, trans = tf.contrib.crf.crf_log_likelihood(
-                    inputs=logits,
-                    tag_indices=self.labels,
-                    transition_params=trans,
-                    sequence_lengths=self.lengths)
-                return tf.reduce_mean(-log_likelihood), trans
-            else:
-                return None, trans
+
+            log_likelihood, trans = tf.contrib.crf.crf_log_likelihood(
+                inputs=logits,
+                tag_indices=self.labels,
+                transition_params=trans,
+                sequence_lengths=self.lengths)
+            return tf.reduce_mean(-log_likelihood), trans
