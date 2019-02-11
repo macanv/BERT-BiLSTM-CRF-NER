@@ -102,7 +102,7 @@ You can see below service starting info:
 ![](./pictures/service_1.png)
 ![](./pictures/service_2.png)
 
-  
+
 you can using below code test client:  
 ```angular2html
 import time
