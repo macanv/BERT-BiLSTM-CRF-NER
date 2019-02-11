@@ -60,7 +60,7 @@ class BLSTM_CRF(object):
         loss, trans = self.crf_layer(logits)
         # CRF decode, pred_ids 是一条最大概率的标注路径
         pred_ids, _ = crf.crf_decode(potentials=logits, transition_params=trans, sequence_length=self.lengths)
-        return ((loss, logits, trans, pred_ids))
+        return (loss, logits, trans, pred_ids)
 
     def _witch_cell(self):
         """

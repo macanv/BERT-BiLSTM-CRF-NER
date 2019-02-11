@@ -56,7 +56,7 @@ with graph.as_default():
     bert_config = modeling.BertConfig.from_json_file(os.path.join(bert_dir, 'bert_config.json'))
     (total_loss, logits, trans, pred_ids) = create_model(
         bert_config=bert_config, is_training=False, input_ids=input_ids_p, input_mask=input_mask_p, segment_ids=None,
-        labels=None, num_labels=num_labels, use_one_hot_embeddings=False, dropout_rate=0.0)
+        labels=None, num_labels=num_labels, use_one_hot_embeddings=False, dropout_rate=1.0)
 
     saver = tf.train.Saver()
     saver.restore(sess, tf.train.latest_checkpoint(model_dir))

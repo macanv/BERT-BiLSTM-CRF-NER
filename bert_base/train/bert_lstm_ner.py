@@ -27,10 +27,13 @@ from bert_base.bert import tokenization
 # import
 
 from bert_base.train.models import create_model, InputFeatures, InputExample
+
+__version__ = '0.1.0'
+
 __all__ = ['__version__', 'DataProcessor', 'NerProcessor', 'write_tokens', 'convert_single_example',
            'filed_based_convert_examples_to_features', 'file_based_input_fn_builder',
            'model_fn_builder', 'train']
-__version__ = '0.1.0'
+
 
 
 class DataProcessor(object):
@@ -340,7 +343,6 @@ def file_based_input_fn_builder(input_file, seq_length, is_training, drop_remain
             d = d.shuffle(buffer_size=300)
         d = d.apply(tf.data.experimental.map_and_batch(lambda record: _decode_record(record, name_to_features),
                                                        batch_size=batch_size,
-                                                       num_parallel_batches=4,  # 同时并行处理多少个batch
                                                        num_parallel_calls=8,  # 并行处理数据的CPU核心数量，不要大于你机器的核心数
                                                        drop_remainder=drop_remainder))
         d = d.prefetch(buffer_size=4)
@@ -378,7 +380,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
         # 使用参数构建模型,input_idx 就是输入的样本idx表示，label_ids 就是标签的idx表示
-        (total_loss, logits, trans, pred_ids) = create_model(
+        total_loss, logits, trans, pred_ids = create_model(
             bert_config, is_training, input_ids, input_mask, segment_ids, label_ids,
             num_labels, False, args.dropout_rate, args.lstm_size, args.cell, args.num_layers)
 
@@ -412,7 +414,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                 train_op=train_op)
         elif mode == tf.estimator.ModeKeys.EVAL:
             # 针对NER ,进行了修改
-            def metric_fn(label_ids, logits, trans):
+            def metric_fn(label_ids, pred_ids):
                 return {
                     "eval_loss": tf.metrics.mean_squared_error(labels=label_ids, predictions=pred_ids),
                 }
@@ -531,14 +533,13 @@ def train(args):
     )
 
     train_examples = None
+    eval_examples = None
     num_train_steps = None
     num_warmup_steps = None
 
-    if args.do_train:
+    if args.do_train and args.do_eval:
         # 加载训练数据
-        print('...')
         train_examples = processor.get_train_examples(args.data_dir)
-        print(len(train_examples))
         num_train_steps = int(
             len(train_examples) *1.0 / args.batch_size * args.num_train_epochs)
         if num_train_steps < 1:
@@ -549,6 +550,13 @@ def train(args):
         tf.logging.info("  Num examples = %d", len(train_examples))
         tf.logging.info("  Batch size = %d", args.batch_size)
         tf.logging.info("  Num steps = %d", num_train_steps)
+
+        eval_examples = processor.get_dev_examples(args.data_dir)
+
+        # 打印验证集数据信息
+        tf.logging.info("***** Running evaluation *****")
+        tf.logging.info("  Num examples = %d", len(eval_examples))
+        tf.logging.info("  Batch size = %d", args.batch_size)
 
     label_list = processor.get_labels()
     # 返回的model_dn 是一个函数，其定义了模型，训练，评测方法，并且使用钩子参数，加载了BERT模型的参数进行了自己模型的参数初始化过程
@@ -585,28 +593,23 @@ def train(args):
             is_training=True,
             drop_remainder=True)
         # estimator.train(input_fn=train_input_fn, max_steps=num_train_steps)
-        eval_examples = processor.get_dev_examples(args.data_dir)
+
         eval_file = os.path.join(args.output_dir, "eval.tf_record")
         if not os.path.exists(eval_file):
             filed_based_convert_examples_to_features(
                 eval_examples, label_list, args.max_seq_length, tokenizer, eval_file, args.output_dir)
-        # 打印验证集数据信息
-        tf.logging.info("***** Running evaluation *****")
-        tf.logging.info("  Num examples = %d", len(eval_examples))
-        tf.logging.info("  Batch size = %d", args.batch_size)
 
-        eval_steps = None
-        eval_drop_remainder = False
         eval_input_fn = file_based_input_fn_builder(
             input_file=eval_file,
             seq_length=args.max_seq_length,
             is_training=False,
-            drop_remainder=eval_drop_remainder)
+            drop_remainder=False)
 
         # train and eval togither
+        # early stop hook
         early_stopping_hook = tf.contrib.estimator.stop_if_no_decrease_hook(
             estimator=estimator,
-            metric_name='eval_loss',
+            metric_name='loss',
             max_steps_without_decrease=num_train_steps,
             eval_dir=None,
             min_steps=0,
@@ -688,7 +691,4 @@ def train(args):
     # filter model
     if args.filter_adam_var:
         adam_filter(args.output_dir)
-
-# if __name__ == '__main__':
-#     train()
 
