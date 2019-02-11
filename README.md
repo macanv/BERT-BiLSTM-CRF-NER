@@ -22,7 +22,7 @@ THIS PROJECT ONLY SUPPORT Python3.
 ## Download project and install  
 You can install this project by:  
 ```
-pip install bert-base==0.0.2 -i https://pypi.python.org/simple
+pip install bert-base==0.0.3 -i https://pypi.python.org/simple
 ```
 OR
 ```angular2html
@@ -30,6 +30,12 @@ git clone https://github.com/macanv/BERT-BiLSTM-CRF-NER
 cd BERT-BiLSTM-CRF-NER/
 python3 setup.py install
 ```
+
+## UPDATE:
+1. fix Missing loss error
+2. add label_list params in train process, so you can using -label_list xxx to special labels in training process.  
+
+    
 ## Train model:
 You can use -help to view the relevant parameters of the training named entity recognition model, where data_dir, bert_config_file, output_dir, init_checkpoint, vocab_file must be specified.
 ```angular2html
@@ -97,14 +103,15 @@ and than you can using below cmd start ner service:
 bert-base-serving-start \
     -ner_model_dir C:\workspace\python\BERT_Base\output\ner2 \
     -bert_model_dir F:\chinese_L-12_H-768_A-12
+    -model_pb_dir C:\workspace\python\BERT_Base\model_pb_dir
 ```
 as you see:   
 mode: If mode is NER, then the service identified by the named entity will be started. If it is BERT, it will be the same as the [bert as service] project.  
 bert_model_dir: bert_model_dir is a BERT model, you can download from https://github.com/google-research/bert
 ner_model_dir: your ner model checkpoint dir
-model_pd_dir: model freeze save dir, after run optimize func, there will contains like ner_model.pb binary file  
+model_pb_dir: model freeze save dir, after run optimize func, there will contains like ner_model.pb binary file  
 >You can download my ner model from：https://pan.baidu.com/s/1m9VcueQ5gF-TJc00sFD88w, ex_code: guqq  
-Set ner_mode.pb to model_pd_dir, and set other file to ner_model_dir  
+Set ner_mode.pb to model_pb_dir, and set other file to ner_model_dir  
 
 You can see below service starting info:
 ![](./pictures/service_1.png)
