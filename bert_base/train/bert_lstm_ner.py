@@ -94,7 +94,20 @@ class NerProcessor(DataProcessor):
         return self._create_example(
             self._read_data(os.path.join(data_dir, "test.txt")), "test")
 
-    def get_labels(self):
+    def get_labels(self, labels=None):
+        if labels is not None:
+            try:
+                # 支持从文件中读取标签类型
+                if os.path.exists(labels) and os.path.isfile(labels):
+                    with codecs.open(labels, 'r', encoding='utf-8') as fd:
+                        for line in fd:
+                            self.labels.append(line.strip())
+                else:
+                    # 否则通过传入的参数，按照逗号分割
+                    self.labels = labels.split(',')
+                self.labels = set(self.labels) # to set
+            except Exception as e:
+                print(e)
         # 通过读取train文件获取标签的方法会出现一定的风险。
         if os.path.exists(os.path.join(self.output_dir, 'label_list.pkl')):
             with codecs.open(os.path.join(self.output_dir, 'label_list.pkl'), 'rb') as rf:
@@ -325,11 +338,12 @@ def file_based_input_fn_builder(input_file, seq_length, is_training, drop_remain
         if is_training:
             d = d.repeat()
             d = d.shuffle(buffer_size=300)
-            d = d.prefetch(buffer_size=2 * batch_size)
         d = d.apply(tf.data.experimental.map_and_batch(lambda record: _decode_record(record, name_to_features),
                                                        batch_size=batch_size,
-                                                       num_parallel_batches=2, # 2 is the tmp strategy
+                                                       num_parallel_batches=4,  # 同时并行处理多少个batch
+                                                       num_parallel_calls=8,  # 并行处理数据的CPU核心数量，不要大于你机器的核心数
                                                        drop_remainder=drop_remainder))
+        d = d.prefetch(buffer_size=4)
         return d
 
     return input_fn
@@ -603,7 +617,7 @@ def train(args):
         # train and eval togither
         early_stopping_hook = tf.contrib.estimator.stop_if_no_decrease_hook(
             estimator=estimator,
-            metric_name='loss',
+            metric_name='eval_loss',
             max_steps_without_decrease=num_train_steps,
             eval_dir=None,
             min_steps=0,

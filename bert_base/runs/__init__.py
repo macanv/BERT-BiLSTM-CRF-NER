@@ -36,7 +36,6 @@ def train_ner():
     os.environ['CUDA_VISIBLE_DEVICES'] = args.device_map
     train(args=args)
 
-
-if __name__ == '__main__':
-    # start_server()
-    train_ner()
+# if __name__ == '__main__':
+#     # start_server()
+#     train_ner()
