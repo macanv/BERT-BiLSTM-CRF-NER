@@ -113,7 +113,7 @@ def get_args_parser():
     group3.add_argument('-priority_batch_size', type=int, default=16,
                         help='batch smaller than this size will be labeled as high priority,'
                              'and jumps forward in the job queue')
-    group3.add_argument('-cpu', action='store_true', default=True,
+    group3.add_argument('-cpu', action='store_true', default=False,
                         help='running on CPU (default on GPU)')
     group3.add_argument('-xla', action='store_true', default=False,
                         help='enable XLA compiler (experimental)')

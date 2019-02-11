@@ -410,7 +410,6 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                  total_loss, learning_rate, num_train_steps, num_warmup_steps, False)
             hook_dict = {}
             hook_dict['loss'] = total_loss
-            hook_dict['learning_rate'] = learning_rate
             hook_dict['global_steps'] = tf.train.get_or_create_global_step()
             logging_hook = tf.train.LoggingTensorHook(
                 hook_dict, every_n_iter=args.save_summary_steps)

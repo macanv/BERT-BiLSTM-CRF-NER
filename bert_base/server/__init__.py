@@ -424,6 +424,7 @@ class BertWorker(Process):
                 'encodes': pred_ids[0]
             })
 
+        # 0 表示只使用CPU 1 表示使用GPU
         config = tf.ConfigProto(device_count={'GPU': 0 if self.device_id < 0 else 1})
         config.gpu_options.allow_growth = True
         config.gpu_options.per_process_gpu_memory_fraction = self.gpu_memory_fraction
