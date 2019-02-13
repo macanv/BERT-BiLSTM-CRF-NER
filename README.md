@@ -22,7 +22,7 @@ THIS PROJECT ONLY SUPPORT Python3.
 ## Download project and install  
 You can install this project by:  
 ```
-pip install bert-base==0.0.3 -i https://pypi.python.org/simple
+pip install bert-base==0.0.5 -i https://pypi.python.org/simple
 ```
 OR
 ```angular2html
