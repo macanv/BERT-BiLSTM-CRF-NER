@@ -7,6 +7,7 @@
  @File    : __init__.py.py
 """
 
+
 def start_server():
     from bert_base.server import BertServer
     from bert_base.server.helper import get_run_args

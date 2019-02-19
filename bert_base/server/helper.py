@@ -49,8 +49,13 @@ class NTLogger:
 def send_ndarray(src, dest, X, req_id=b'', flags=0, copy=True, track=False):
     """send a numpy array with metadata"""
     # md = dict(dtype=str(X.dtype), shape=X.shape)
-    md = dict(dtype='str', shape=(len(X), len(X[0])))
-    # print(md)
+    if type(X) == list and type(X[0]) == dict: # 分类for sink发送消息的处理
+        md = dict(dtype='json', shape=(len(X[0]['pred_label']), 1))
+    elif type(X) == dict: # 分类 bertwork 发送消息的处理
+        md = dict(dtype='json', shape=(len(X['pred_label']), 1))
+    else:
+        md = dict(dtype='str', shape=(len(X), len(X[0])))
+    # print('md', md)
     return src.send_multipart([dest, jsonapi.dumps(md), pickle.dumps(X), req_id], flags, copy=copy, track=track)
 
 
@@ -66,7 +71,7 @@ def get_args_parser():
     group1.add_argument('-bert_model_dir', type=str, required=True,
                         help='chinese google bert model path')
 
-    group1.add_argument('-ner_model_dir', type=str, required=True,
+    group1.add_argument('-model_dir', type=str, required=True,
                         help='directory of a pretrained BERT model')
     group1.add_argument('-model_pb_dir', type=str, default=None,
                         help='directory of a pretrained BERT model')

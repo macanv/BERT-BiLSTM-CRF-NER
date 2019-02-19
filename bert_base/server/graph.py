@@ -11,7 +11,7 @@ import sys
 sys.path.append('..')
 from bert_base.bert import modeling
 
-__all__ = ['PoolingStrategy', 'optimize_bert_graph', 'optimize_ner_model']
+__all__ = ['PoolingStrategy', 'optimize_bert_graph', 'optimize_ner_model', 'optimize_class_model']
 
 
 class PoolingStrategy(Enum):
@@ -297,6 +297,62 @@ def optimize_ner_model(args, num_labels,  logger=None):
                 from tensorflow.python.framework import graph_util
                 tmp_g = graph_util.convert_variables_to_constants(sess, graph.as_graph_def(), ['pred_ids'])
                 logger.info('model cut finished !!!')
+        # 存储二进制模型到文件中
+        logger.info('write graph to a tmp file: %s' % pb_file)
+        with tf.gfile.GFile(pb_file, 'wb') as f:
+            f.write(tmp_g.SerializeToString())
+        return pb_file
+    except Exception as e:
+        logger.error('fail to optimize the graph! %s' % e, exc_info=True)
+
+
+def optimize_class_model(args, num_labels,  logger=None):
+    """
+    加载中文分类模型
+    :param args:
+    :param num_labels:
+    :param logger:
+    :return:
+    """
+    if not logger:
+        logger = set_logger(colored('CLASSIFICATION_MODEL, Lodding...', 'cyan'), args.verbose)
+    try:
+        # 如果PB文件已经存在则，返回PB文件的路径，否则将模型转化为PB文件，并且返回存储PB文件的路径
+        if args.model_pb_dir is None:
+            # 获取当前的运行路径
+            tmp_file = os.path.join(os.getcwd(), 'predict_optimizer')
+            if not os.path.exists(tmp_file):
+                os.mkdir(tmp_file)
+        else:
+            tmp_file = args.model_pb_dir
+        pb_file = os.path.join(tmp_file, 'classification_model.pb')
+        if os.path.exists(pb_file):
+            print('pb_file exits', pb_file)
+            return pb_file
+        import tensorflow as tf
+
+        graph = tf.Graph()
+        with graph.as_default():
+            with tf.Session() as sess:
+                input_ids = tf.placeholder(tf.int32, (None, args.max_seq_len), 'input_ids')
+                input_mask = tf.placeholder(tf.int32, (None, args.max_seq_len), 'input_mask')
+
+                bert_config = modeling.BertConfig.from_json_file(os.path.join(args.bert_model_dir, 'bert_config.json'))
+                from bert_base.train.models import create_classification_model
+                loss, per_example_loss, logits, probabilities = create_classification_model(bert_config=bert_config, is_training=False,
+                    input_ids=input_ids, input_mask=input_mask, segment_ids=None, labels=None, num_labels=num_labels)
+                # pred_ids = tf.argmax(probabilities, axis=-1, output_type=tf.int32, name='pred_ids')
+                # pred_ids = tf.identity(pred_ids, 'pred_ids')
+                probabilities = tf.identity(probabilities, 'pred_prob')
+                saver = tf.train.Saver()
+
+            with tf.Session() as sess:
+                sess.run(tf.global_variables_initializer())
+                saver.restore(sess, tf.train.latest_checkpoint(args.model_dir))
+                logger.info('freeze...')
+                from tensorflow.python.framework import graph_util
+                tmp_g = graph_util.convert_variables_to_constants(sess, graph.as_graph_def(), ['pred_prob'])
+                logger.info('predict cut finished !!!')
         # 存储二进制模型到文件中
         logger.info('write graph to a tmp file: %s' % pb_file)
         with tf.gfile.GFile(pb_file, 'wb') as f:

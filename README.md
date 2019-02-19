@@ -22,7 +22,7 @@ THIS PROJECT ONLY SUPPORT Python3.
 ## Download project and install  
 You can install this project by:  
 ```
-pip install bert-base==0.0.5 -i https://pypi.python.org/simple
+pip install bert-base==0.0.6 -i https://pypi.python.org/simple
 ```
 OR
 ```angular2html
@@ -32,9 +32,10 @@ python3 setup.py install
 ```
 
 ## UPDATE:
-1. fix Missing loss error
-2. add label_list params in train process, so you can using -label_list xxx to special labels in training process.  
-
+- 2019.2.19: add text classification service
+-  fix Missing loss error
+- add label_list params in train process, so you can using -label_list xxx to special labels in training process.  
+  
     
 ## Train model:
 You can use -help to view the relevant parameters of the training named entity recognition model, where data_dir, bert_config_file, output_dir, init_checkpoint, vocab_file must be specified.
@@ -88,11 +89,12 @@ After training model, the NER model will be saved in {output_dir} which you spec
 
 ## As Service
 Many server and client code comes from excellent open source projects: [bert as service of hanxiao](https://github.com/hanxiao/bert-as-service) If my code violates any license agreement, please let me know and I will correct it the first time.
-and NER server/client service code can be applied to other tasks with simple modifications, such as text categorization, which I will provide later.
-Welcome to submit your request, if you want to share it on Github or my work.  
+~~and NER server/client service code can be applied to other tasks with simple modifications, such as text categorization, which I will provide later.~~
+this project private Named Entity Recognition and Text Classification server service.
+Welcome to submit your request or share your model, if you want to share it on Github or my work.  
 
 You can use -help to view the relevant parameters of the NER as Service:
-which ner_model_dir, bert_model_dir is need
+which model_dir, bert_model_dir is need
 ```
 bert-base-serving-start -help
 ```
@@ -101,17 +103,28 @@ bert-base-serving-start -help
 and than you can using below cmd start ner service:
 ```angular2html
 bert-base-serving-start \
-    -ner_model_dir C:\workspace\python\BERT_Base\output\ner2 \
+    -model_dir C:\workspace\python\BERT_Base\output\ner2 \
     -bert_model_dir F:\chinese_L-12_H-768_A-12
     -model_pb_dir C:\workspace\python\BERT_Base\model_pb_dir
+    -mode NER
+```
+or text classification service:
+```angular2html
+bert-base-serving-start \
+    -model_dir C:\workspace\python\BERT_Base\output\ner2 \
+    -bert_model_dir F:\chinese_L-12_H-768_A-12
+    -model_pb_dir C:\workspace\python\BERT_Base\model_pb_dir
+    -mode CLASS
+    -max_seq_len 202
 ```
 as you see:   
-mode: If mode is NER, then the service identified by the named entity will be started. If it is BERT, it will be the same as the [bert as service] project.  
+mode: If mode is NER/CLASS, then the service identified by the Named Entity Recognition/Text Classification will be started. If it is BERT, it will be the same as the [bert as service] project.  
 bert_model_dir: bert_model_dir is a BERT model, you can download from https://github.com/google-research/bert
 ner_model_dir: your ner model checkpoint dir
 model_pb_dir: model freeze save dir, after run optimize func, there will contains like ner_model.pb binary file  
->You can download my ner model from：https://pan.baidu.com/s/1m9VcueQ5gF-TJc00sFD88w, ex_code: guqq  
-Set ner_mode.pb to model_pb_dir, and set other file to ner_model_dir  
+>You can download my ner model from：https://pan.baidu.com/s/1m9VcueQ5gF-TJc00sFD88w, ex_code: guqq
+> Or text classification model from: https://pan.baidu.com/s/1oFPsOUh1n5AM2HjDIo2XCw, ex_code: bbu8   
+Set ner_mode.pb to model_pb_dir, and set other file to model_dir  
 
 You can see below service starting info:
 ![](./pictures/service_1.png)
@@ -119,6 +132,7 @@ You can see below service starting info:
 
 
 you can using below code test client:  
+#### 1. NER Client
 ```angular2html
 import time
 from bert_base.client import BertClient
@@ -133,7 +147,23 @@ with BertClient(show_server_config=False, check_version=False, check_length=Fals
 you can see this after run the above code:
 ![](./pictures/server_ner_rst.png)
 
-  
+#### 2. Text Classification Client
+```angular2html
+with BertClient(show_server_config=False, check_version=False, check_length=False, mode='CLASS') as bc:
+    start_t = time.perf_counter()
+    str1 = '北京时间2月17日凌晨，第69届柏林国际电影节公布主竞赛单元获奖名单，王景春、咏梅凭借王小帅执导的中国影片《地久天长》连夺最佳男女演员双银熊大奖，这是中国演员首次包揽柏林电影节最佳男女演员奖，为华语影片刷新纪录。与此同时，由青年导演王丽娜执导的影片《第一次的别离》也荣获了本届柏林电影节新生代单元国际评审团最佳影片，可以说，在经历数个获奖小年之后，中国电影在柏林影展再次迎来了高光时刻。'
+    str2 = '受粤港澳大湾区规划纲要提振，港股周二高开，恒指开盘上涨近百点，涨幅0.33%，报28440.49点，相关概念股亦集体上涨，电子元件、新能源车、保险、基建概念多数上涨。粤泰股份、珠江实业、深天地A等10余股涨停；中兴通讯、丘钛科技、舜宇光学分别高开1.4%、4.3%、1.6%。比亚迪电子、比亚迪股份、光宇国际分别高开1.7%、1.2%、1%。越秀交通基建涨近2%，粤海投资、碧桂园等多股涨超1%。其他方面，日本软银集团股价上涨超0.4%，推动日经225和东证指数齐齐高开，但随后均回吐涨幅转跌东证指数跌0.2%，日经225指数跌0.11%，报21258.4点。受芯片制造商SK海力士股价下跌1.34％拖累，韩国综指下跌0.34％至2203.9点。澳大利亚ASX 200指数早盘上涨0.39％至6089.8点，大多数行业板块均现涨势。在保健品品牌澳佳宝下调下半财年的销售预期后，其股价暴跌超过23％。澳佳宝CEO亨弗里（Richard Henfrey）认为，公司下半年的利润可能会低于上半年，主要是受到销售额疲弱的影响。同时，亚市早盘澳洲联储公布了2月会议纪要，政策委员将继续谨慎评估经济增长前景，因前景充满不确定性的影响，稳定当前的利率水平比贸然调整利率更为合适，而且当前利率水平将有利于趋向通胀目标及改善就业，当前劳动力市场数据表现强势于其他经济数据。另一方面，经济增长前景亦令消费者消费意愿下滑，如果房价出现下滑，消费可能会进一步疲弱。在澳洲联储公布会议纪要后，澳元兑美元下跌近30点，报0.7120 。美元指数在昨日触及96.65附近的低点之后反弹至96.904。日元兑美元报110.56，接近上一交易日的低点。'
+    str3 = '新京报快讯 据国家市场监管总局消息，针对媒体报道水饺等猪肉制品检出非洲猪瘟病毒核酸阳性问题，市场监管总局、农业农村部已要求企业立即追溯猪肉原料来源并对猪肉制品进行了处置。两部门已派出联合督查组调查核实相关情况，要求猪肉制品生产企业进一步加强对猪肉原料的管控，落实检验检疫票证查验规定，完善非洲猪瘟检测和复核制度，防止染疫猪肉原料进入食品加工环节。市场监管总局、农业农村部等部门要求各地全面落实防控责任，强化防控措施，规范信息报告和发布，对不按要求履行防控责任的企业，一旦发现将严厉查处。专家认为，非洲猪瘟不是人畜共患病，虽然对猪有致命危险，但对人没有任何危害，属于只传猪不传人型病毒，不会影响食品安全。开展猪肉制品病毒核酸检测，可为防控溯源工作提供线索。'
+    rst = bc.encode([str1, str2, str3])
+    print('rst:', rst)
+    print('time used:{}'.format(time.perf_counter() - start_t))
+```
+you can see this after run the above code:
+![](./pictures/text_class_rst.png)
+
+Note that it can not start NER service and Text Classification service together. but you can using twice command line start ner service and text classification with different port.  
+
+
 # The following tutorial is an old version and will be removed in the future.
 
 ## How to train

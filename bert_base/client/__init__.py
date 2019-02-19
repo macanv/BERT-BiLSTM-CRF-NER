@@ -158,6 +158,11 @@ class BertClient(object):
             arr_info, arr_val = jsonapi.loads(response[1]), response[2]
             X = np.frombuffer(_buffer(arr_val), dtype=str(arr_info['dtype']))
             return Response(request_id, self.formatter(X.reshape(arr_info['shape'])))
+        elif self.mode == 'CLASS':
+            arr_info, arr_val = jsonapi.loads(response[1]), pickle.loads(response[2])
+            # print('*'*20,arr_info['dtype'])
+            assert arr_info['dtype'] == 'json'
+            return Response(request_id, arr_val)
 
     @property
     def status(self):

@@ -473,10 +473,10 @@ def convert_lst_to_features(lst_str, seq_length, tokenizer, logger, is_tokenized
         assert len(input_mask) == seq_length
         assert len(input_type_ids) == seq_length
 
-        logger.debug('tokens: %s' % ' '.join([tokenization.printable_text(x) for x in tokens]))
-        logger.debug('input_ids: %s' % ' '.join([str(x) for x in input_ids]))
-        logger.debug('input_mask: %s' % ' '.join([str(x) for x in input_mask]))
-        logger.debug('input_type_ids: %s' % ' '.join([str(x) for x in input_type_ids]))
+        # logger.debug('tokens: %s' % ' '.join([tokenization.printable_text(x) for x in tokens]))
+        # logger.debug('input_ids: %s' % ' '.join([str(x) for x in input_ids]))
+        # logger.debug('input_mask: %s' % ' '.join([str(x) for x in input_mask]))
+        # logger.debug('input_type_ids: %s' % ' '.join([str(x) for x in input_type_ids]))
 
         yield InputFeatures(
             unique_id=example.unique_id,

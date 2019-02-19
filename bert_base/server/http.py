@@ -25,7 +25,7 @@ class BertHTTPProxy(Process):
         # support up to 10 concurrent HTTP requests
         bc = ConcurrentBertClient(max_concurrency=self.args.http_max_connect,
                                   port=self.args.port, port_out=self.args.port_out,
-                                  output_fmt='list')
+                                  output_fmt='list', mode=self.args.mode)
         app = Flask(__name__)
         logger = set_logger(colored('PROXY', 'red'))
 

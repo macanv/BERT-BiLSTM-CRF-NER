@@ -92,10 +92,24 @@ class BertServer(threading.Thread):
             with Pool(processes=1) as pool:
                 # optimize the graph, must be done in another process
                 from .graph import optimize_ner_model
-                num_labels, label2id, id2label = init_ner_predict_var(self.args.ner_model_dir)
-                self.num_labels = num_labels
+                num_labels, label2id, id2label = init_predict_var(self.args.ner_model_dir)
+                self.num_labels = num_labels + 1
                 self.id2label = id2label
                 self.graph_path = pool.apply(optimize_ner_model, (self.args, num_labels))
+            if self.graph_path:
+                self.logger.info('optimized graph is stored at: %s' % self.graph_path)
+            else:
+                raise FileNotFoundError('graph optimization fails and returns empty result')
+        elif args.mode == 'CLASS':
+            self.logger.info('lodding classification predict, could take a while...')
+            with Pool(processes=1) as pool:
+                # optimize the graph, must be done in another process
+                from .graph import optimize_class_model
+                num_labels, label2id, id2label = init_predict_var(self.args.model_dir)
+                self.num_labels = num_labels
+                self.id2label = id2label
+                self.logger.info('contain %d labels:%s' %(num_labels, str(id2label.values())))
+                self.graph_path = pool.apply(optimize_class_model, (self.args, num_labels))
             if self.graph_path:
                 self.logger.info('optimized graph is stored at: %s' % self.graph_path)
             else:
@@ -155,7 +169,7 @@ class BertServer(threading.Thread):
                                      self.graph_path, self.args.mode)
                 self.processes.append(process)
                 process.start()
-            elif self.args.mode == 'NER':
+            elif self.args.mode in ['NER', 'CLASS']:
                 process = BertWorker(idx, self.args, addr_backend_list, addr_sink, device_id,
                                      self.graph_path, self.args.mode, self.id2label)
                 self.processes.append(process)
@@ -319,10 +333,14 @@ class BertSink(Process):
                     X = X.reshape(arr_info['shape'])
                     pending_result[job_id].append((X, partial_id))
                     pending_checksum[job_id] += X.shape[0]
-                else:
+                elif self.args.mode == 'NER':
                     arr_info, arr_val = jsonapi.loads(msg[1]), pickle.loads(msg[2])
                     pending_result[job_id].append((arr_val, partial_id))
                     pending_checksum[job_id] += len(arr_val)
+                elif self.args.mode == 'CLASS':
+                    arr_info, arr_val = jsonapi.loads(msg[1]), pickle.loads(msg[2])
+                    pending_result[job_id].append((arr_val, partial_id))
+                    pending_checksum[job_id] += len(arr_val['pred_label'])
                 # print('type of msg[2]', type(arr_val))
                 logger.info('collect job %s (%d/%d)' % (job_id,
                                                         pending_checksum[job_id],
@@ -335,7 +353,10 @@ class BertSink(Process):
                     # re-sort to the original order
                     tmp = [x[0] for x in sorted(tmp, key=lambda x: int(x[1]))]
                     client_addr, req_id = job_info.split(b'#')
-                    send_ndarray(sender, client_addr, np.concatenate(tmp, axis=0), req_id)
+                    if self.args.mode == 'CLASS': # 因为分类模型带上了分类的概率，所以不能直接返回结果，需要使用json格式的数据进行返回。
+                        send_ndarray(sender, client_addr, tmp, req_id)
+                    else:
+                        send_ndarray(sender, client_addr, np.concatenate(tmp, axis=0), req_id)
                     pending_result.pop(job_info)
                     pending_checksum.pop(job_info)
                     job_checksum.pop(job_info)
@@ -424,6 +445,29 @@ class BertWorker(Process):
                 'encodes': pred_ids[0]
             })
 
+        def classification_model_fn(features, labels, mode, params):
+            """
+            文本分类模型的model_fn
+            :param features:
+            :param labels:
+            :param mode:
+            :param params:
+            :return:
+            """
+            with tf.gfile.GFile(self.graph_path, 'rb') as f:
+                graph_def = tf.GraphDef()
+                graph_def.ParseFromString(f.read())
+            input_ids = features["input_ids"]
+            input_mask = features["input_mask"]
+            input_map = {"input_ids": input_ids, "input_mask": input_mask}
+            pred_probs = tf.import_graph_def(graph_def, name='', input_map=input_map, return_elements=['pred_prob:0'])
+
+            return EstimatorSpec(mode=mode, predictions={
+                'client_id': features['client_id'],
+                'encodes': tf.argmax(pred_probs[0], axis=-1),
+                'score': tf.reduce_max(pred_probs[0], axis=-1)
+            })
+
         # 0 表示只使用CPU 1 表示使用GPU
         config = tf.ConfigProto(device_count={'GPU': 0 if self.device_id < 0 else 1})
         config.gpu_options.allow_growth = True
@@ -436,6 +480,8 @@ class BertWorker(Process):
             return Estimator(model_fn=ner_model_fn, config=RunConfig(session_config=config))
         elif self.mode == 'BERT':
             return Estimator(model_fn=model_fn, config=RunConfig(session_config=config))
+        elif self.mode == 'CLASS':
+            return Estimator(model_fn=classification_model_fn, config=RunConfig(session_config=config))
 
     def run(self):
         self._run()
@@ -461,11 +507,15 @@ class BertWorker(Process):
                 send_ndarray(sink, r['client_id'], r['encodes'])
                 logger.info('job done\tsize: %s\tclient: %s' % (r['encodes'].shape, r['client_id']))
             elif self.mode == 'NER':
-                # logger.info('start ner result to json....%s' % (str(r['encodes']))) # remove
-                # rst = send_ndarray(sink, r['client_id'], r['encodes'])#"""pred_label_result""")
                 pred_label_result, pred_ids_result = ner_result_to_json(r['encodes'], self.id2label)
                 rst = send_ndarray(sink, r['client_id'], pred_label_result)
                 # print(rst)
+                logger.info('job done\tsize: %s\tclient: %s' % (r['encodes'].shape, r['client_id']))
+            elif self.mode == 'CLASS':
+                pred_label_result = [self.id2label.get(x, -1) for x in r['encodes']]
+                pred_score_result = r['score'].tolist()
+                to_client = {'pred_label': pred_label_result, 'score': pred_score_result}
+                rst = send_ndarray(sink, r['client_id'], to_client)
                 logger.info('job done\tsize: %s\tclient: %s' % (r['encodes'].shape, r['client_id']))
 
     def input_fn_builder(self, socks, tf):
@@ -588,7 +638,7 @@ class ServerStatistic:
         return {k: v for d in parts for k, v in d.items()}
 
 
-def init_ner_predict_var(path):
+def init_predict_var(path):
     """
     初始化NER所需要的一些辅助数据
     :param path:
@@ -599,7 +649,7 @@ def init_ner_predict_var(path):
     if os.path.exists(label_list_file):
         with open(label_list_file, 'rb') as fd:
             label_list = pickle.load(fd)
-    num_labels = len(label_list) + 1
+    num_labels = len(label_list)
 
     with open(os.path.join(path, 'label2id.pkl'), 'rb') as rf:
         label2id = pickle.load(rf)

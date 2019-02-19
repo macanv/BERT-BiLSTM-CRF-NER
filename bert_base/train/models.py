@@ -12,7 +12,7 @@ from tensorflow.contrib.layers.python.layers import initializers
 
 
 __all__ = ['InputExample', 'InputFeatures', 'decode_labels', 'create_model', 'convert_id_str',
-           'convert_id_to_label', 'result_to_json']
+           'convert_id_to_label', 'result_to_json', 'create_classification_model']
 
 class Model(object):
     def __init__(self, *args, **kwargs):
@@ -100,6 +100,73 @@ def create_model(bert_config, is_training, input_ids, input_mask,
                           seq_length=max_seq_length, labels=labels, lengths=lengths, is_training=is_training)
     rst = blstm_crf.add_blstm_crf_layer(crf_only=True)
     return rst
+
+
+def create_classification_model(bert_config, is_training, input_ids, input_mask, segment_ids, labels, num_labels):
+    """
+
+    :param bert_config:
+    :param is_training:
+    :param input_ids:
+    :param input_mask:
+    :param segment_ids:
+    :param labels:
+    :param num_labels:
+    :param use_one_hot_embedding:
+    :return:
+    """
+    import tensorflow as tf
+    from bert_base.bert import modeling
+    # 通过传入的训练数据，进行representation
+    model = modeling.BertModel(
+        config=bert_config,
+        is_training=is_training,
+        input_ids=input_ids,
+        input_mask=input_mask,
+        token_type_ids=segment_ids,
+    )
+
+    embedding_layer = model.get_sequence_output()
+    output_layer = model.get_pooled_output()
+    hidden_size = output_layer.shape[-1].value
+
+    # predict = CNN_Classification(embedding_chars=embedding_layer,
+    #                                labels=labels,
+    #                                num_tags=num_labels,
+    #                                sequence_length=FLAGS.max_seq_length,
+    #                                embedding_dims=embedding_layer.shape[-1].value,
+    #                                vocab_size=0,
+    #                                filter_sizes=[3, 4, 5],
+    #                                num_filters=3,
+    #                                dropout_keep_prob=FLAGS.dropout_keep_prob,
+    #                                l2_reg_lambda=0.001)
+    # loss, predictions, probabilities = predict.add_cnn_layer()
+
+    output_weights = tf.get_variable(
+        "output_weights", [num_labels, hidden_size],
+        initializer=tf.truncated_normal_initializer(stddev=0.02))
+
+    output_bias = tf.get_variable(
+        "output_bias", [num_labels], initializer=tf.zeros_initializer())
+
+    with tf.variable_scope("loss"):
+        if is_training:
+            # I.e., 0.1 dropout
+            output_layer = tf.nn.dropout(output_layer, keep_prob=0.9)
+
+        logits = tf.matmul(output_layer, output_weights, transpose_b=True)
+        logits = tf.nn.bias_add(logits, output_bias)
+        probabilities = tf.nn.softmax(logits, axis=-1)
+        log_probs = tf.nn.log_softmax(logits, axis=-1)
+
+        if labels is not None:
+            one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
+
+            per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
+            loss = tf.reduce_mean(per_example_loss)
+        else:
+            loss, per_example_loss = None, None
+    return (loss, per_example_loss, logits, probabilities)
 
 
 def decode_labels(labels, batch_size):
