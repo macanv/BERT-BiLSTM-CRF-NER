@@ -92,7 +92,7 @@ class BertServer(threading.Thread):
             with Pool(processes=1) as pool:
                 # optimize the graph, must be done in another process
                 from .graph import optimize_ner_model
-                num_labels, label2id, id2label = init_predict_var(self.args.ner_model_dir)
+                num_labels, label2id, id2label = init_predict_var(self.args.model_dir)
                 self.num_labels = num_labels + 1
                 self.id2label = id2label
                 self.graph_path = pool.apply(optimize_ner_model, (self.args, num_labels))
