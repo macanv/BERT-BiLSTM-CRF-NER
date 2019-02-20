@@ -117,6 +117,7 @@ bert-base-serving-start \
     -mode CLASS
     -max_seq_len 202
 ```
+
 as you see:   
 mode: If mode is NER/CLASS, then the service identified by the Named Entity Recognition/Text Classification will be started. If it is BERT, it will be the same as the [bert as service] project.  
 bert_model_dir: bert_model_dir is a BERT model, you can download from https://github.com/google-research/bert
@@ -124,7 +125,7 @@ ner_model_dir: your ner model checkpoint dir
 model_pb_dir: model freeze save dir, after run optimize func, there will contains like ner_model.pb binary file  
 >You can download my ner model from：https://pan.baidu.com/s/1m9VcueQ5gF-TJc00sFD88w, ex_code: guqq
 > Or text classification model from: https://pan.baidu.com/s/1oFPsOUh1n5AM2HjDIo2XCw, ex_code: bbu8   
-Set ner_mode.pb to model_pb_dir, and set other file to model_dir  
+Set ner_mode.pb/classification_model.pb to model_pb_dir, and set other file to model_dir(Different models need to be stored separately, you can set ner models label_list.pkl and label2id.pkl to model_dir/ner/ and set text classification file to model_dir/text_classification) , Text classification model can classify 12 categories of Chinese data： '游戏', '娱乐', '财经', '时政', '股票', '教育', '社会', '体育', '家居', '时尚', '房产', '彩票'  
 
 You can see below service starting info:
 ![](./pictures/service_1.png)
