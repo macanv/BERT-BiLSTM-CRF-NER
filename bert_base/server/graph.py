@@ -292,7 +292,7 @@ def optimize_ner_model(args, num_labels,  logger=None):
 
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
-                saver.restore(sess, tf.train.latest_checkpoint(args.ner_model_dir))
+                saver.restore(sess, tf.train.latest_checkpoint(args.model_dir))
                 logger.info('freeze...')
                 from tensorflow.python.framework import graph_util
                 tmp_g = graph_util.convert_variables_to_constants(sess, graph.as_graph_def(), ['pred_ids'])

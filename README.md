@@ -22,7 +22,7 @@ THIS PROJECT ONLY SUPPORT Python3.
 ## Download project and install  
 You can install this project by:  
 ```
-pip install bert-base==0.0.6 -i https://pypi.python.org/simple
+pip install bert-base==0.0.7 -i https://pypi.python.org/simple
 ```
 OR
 ```angular2html
@@ -32,6 +32,7 @@ python3 setup.py install
 ```
 
 ## UPDATE:
+- 2019.2.25 Fix some bug for ner service
 - 2019.2.19: add text classification service
 -  fix Missing loss error
 - add label_list params in train process, so you can using -label_list xxx to special labels in training process.  
