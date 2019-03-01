@@ -95,7 +95,7 @@ class BertServer(threading.Thread):
                 num_labels, label2id, id2label = init_predict_var(self.args.model_dir)
                 self.num_labels = num_labels + 1
                 self.id2label = id2label
-                self.graph_path = pool.apply(optimize_ner_model, (self.args, num_labels))
+                self.graph_path = pool.apply(optimize_ner_model, (self.args, self.num_labels))
             if self.graph_path:
                 self.logger.info('optimized graph is stored at: %s' % self.graph_path)
             else:
@@ -509,7 +509,7 @@ class BertWorker(Process):
             elif self.mode == 'NER':
                 pred_label_result, pred_ids_result = ner_result_to_json(r['encodes'], self.id2label)
                 rst = send_ndarray(sink, r['client_id'], pred_label_result)
-                # print(rst)
+                # print('rst:', rst)
                 logger.info('job done\tsize: %s\tclient: %s' % (r['encodes'].shape, r['client_id']))
             elif self.mode == 'CLASS':
                 pred_label_result = [self.id2label.get(x, -1) for x in r['encodes']]
@@ -661,6 +661,7 @@ def ner_result_to_json(predict_ids, id2label):
     """
     NER识别结果转化为真实标签结果进行返回
     :param predict_ids:
+    :param id2label
     :return:
     """
     if False:
