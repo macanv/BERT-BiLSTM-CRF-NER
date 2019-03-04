@@ -415,7 +415,7 @@ def convert_lst_to_features(lst_str, seq_length, tokenizer, logger, is_tokenized
 
     examples = read_tokenized_examples(lst_str) if is_tokenized else read_line_examples(lst_str)
 
-    _tokenize = lambda x: tokenizer.mark_unk_tokens(x) if is_tokenized else tokenizer.tokenize(x)
+    _tokenize = lambda x: x if is_tokenized else tokenizer.tokenize(x)
 
     for (ex_index, example) in enumerate(examples):
         tokens_a = _tokenize(example.text_a)

@@ -22,8 +22,9 @@ THIS PROJECT ONLY SUPPORT Python3.
 ## Download project and install  
 You can install this project by:  
 ```
-pip install bert-base==0.0.7 -i https://pypi.python.org/simple
+pip install bert-base==0.0.8 -i https://pypi.python.org/simple
 ```
+
 OR
 ```angular2html
 git clone https://github.com/macanv/BERT-BiLSTM-CRF-NER
@@ -148,6 +149,11 @@ with BertClient(show_server_config=False, check_version=False, check_length=Fals
 ```
 you can see this after run the above code:
 ![](./pictures/server_ner_rst.png)
+If you want to customize the word segmentation method, you only need to make the following simple changes on the client side code.
+
+```angular2html
+rst = bc.encode([list(str), list(str)], is_tokenized=True)
+```  
 
 #### 2. Text Classification Client
 ```angular2html

@@ -13,14 +13,31 @@ from bert_base.client import BertClient
 def ner_test():
     with BertClient(show_server_config=False, check_version=False, check_length=False, mode='NER') as bc:
         start_t = time.perf_counter()
-        str = '1月24日，新华社对外发布了中央对雄安新区的指导意见，洋洋洒洒1.2万多字，17次提到北京，4次提到天津，信息量很大，其实也回答了人们关心的很多问题。'
-        rst = bc.encode([str, str])
+        str1 = '1月24日，新华社对外发布了中央对雄安新区的指导意见，洋洋洒洒1.2万多字，17次提到北京，4次提到天津，信息量很大，其实也回答了人们关心的很多问题。'
+        # rst = bc.encode([list(str1)], is_tokenized=True)
+        # str1 = list(str1)
+        rst = bc.encode([str1], is_tokenized=True)
         print('rst:', rst)
+        print(len(rst[0]))
+        print(time.perf_counter() - start_t)
+
+
+def ner_cu_seg():
+    """
+    自定义分字
+    :return:
+    """
+    with BertClient(show_server_config=False, check_version=False, check_length=False, mode='NER') as bc:
+        start_t = time.perf_counter()
+        str1 = '1月24日，新华社对外发布了中央对雄安新区的指导意见，洋洋洒洒1.2万多字，17次提到北京，4次提到天津，信息量很大，其实也回答了人们关心的很多问题。'
+        rst = bc.encode([list(str1)], is_tokenized=True)
+        print('rst:', rst)
+        print(len(rst[0]))
         print(time.perf_counter() - start_t)
 
 
 def class_test():
-    with BertClient(port=5557, port_out=5558, show_server_config=False, check_version=False, check_length=False, mode='CLASS') as bc:
+    with BertClient(show_server_config=False, check_version=False, check_length=False, mode='CLASS') as bc:
         start_t = time.perf_counter()
         str = '北京时间2月17日凌晨，第69届柏林国际电影节公布主竞赛单元获奖名单，王景春、咏梅凭借王小帅执导的中国影片《地久天长》连夺最佳男女演员双银熊大奖，这是中国演员首次包揽柏林电影节最佳男女演员奖，为华语影片刷新纪录。与此同时，由青年导演王丽娜执导的影片《第一次的别离》也荣获了本届柏林电影节新生代单元国际评审团最佳影片，可以说，在经历数个获奖小年之后，中国电影在柏林影展再次迎来了高光时刻。'
         str2 = '受粤港澳大湾区规划纲要提振，港股周二高开，恒指开盘上涨近百点，涨幅0.33%，报28440.49点，相关概念股亦集体上涨，电子元件、新能源车、保险、基建概念多数上涨。粤泰股份、珠江实业、深天地A等10余股涨停；中兴通讯、丘钛科技、舜宇光学分别高开1.4%、4.3%、1.6%。比亚迪电子、比亚迪股份、光宇国际分别高开1.7%、1.2%、1%。越秀交通基建涨近2%，粤海投资、碧桂园等多股涨超1%。其他方面，日本软银集团股价上涨超0.4%，推动日经225和东证指数齐齐高开，但随后均回吐涨幅转跌东证指数跌0.2%，日经225指数跌0.11%，报21258.4点。受芯片制造商SK海力士股价下跌1.34％拖累，韩国综指下跌0.34％至2203.9点。澳大利亚ASX 200指数早盘上涨0.39％至6089.8点，大多数行业板块均现涨势。在保健品品牌澳佳宝下调下半财年的销售预期后，其股价暴跌超过23％。澳佳宝CEO亨弗里（Richard Henfrey）认为，公司下半年的利润可能会低于上半年，主要是受到销售额疲弱的影响。同时，亚市早盘澳洲联储公布了2月会议纪要，政策委员将继续谨慎评估经济增长前景，因前景充满不确定性的影响，稳定当前的利率水平比贸然调整利率更为合适，而且当前利率水平将有利于趋向通胀目标及改善就业，当前劳动力市场数据表现强势于其他经济数据。另一方面，经济增长前景亦令消费者消费意愿下滑，如果房价出现下滑，消费可能会进一步疲弱。在澳洲联储公布会议纪要后，澳元兑美元下跌近30点，报0.7120 。美元指数在昨日触及96.65附近的低点之后反弹至96.904。日元兑美元报110.56，接近上一交易日的低点。'
@@ -31,5 +48,6 @@ def class_test():
 
 
 if __name__ == '__main__':
-    class_test()
-    # ner_test()
+    # class_test()
+    ner_test()
+    ner_cu_seg()

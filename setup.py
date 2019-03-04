@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 # print(__version__)
 setup(
     name='bert_base',
-    version='0.0.7',
+    version='0.0.8',
     description='Use Google\'s BERT for Chinese natural language processing tasks such as named entity recognition and provide server services',
     url='https://github.com/macanv/BERT-BiLSTM-CRF-NER',
     long_description=open('README.md', 'r', encoding='utf-8').read(),
