@@ -1,3 +1,5 @@
+# encoding =utf-8
+
 from os import path
 import codecs
 from setuptools import setup, find_packages
@@ -11,7 +13,7 @@ from setuptools import setup, find_packages
 # print(__version__)
 setup(
     name='bert_base',
-    version='0.0.8',
+    version='0.0.9',
     description='Use Google\'s BERT for Chinese natural language processing tasks such as named entity recognition and provide server services',
     url='https://github.com/macanv/BERT-BiLSTM-CRF-NER',
     long_description=open('README.md', 'r', encoding='utf-8').read(),
