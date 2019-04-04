@@ -175,7 +175,7 @@ you can see this after run the above code:
 
 Note that it can not start NER service and Text Classification service together. but you can using twice command line start ner service and text classification with different port.  
 
-## Licence
+## License
 MIT.  
 
 # The following tutorial is an old version and will be removed in the future.
