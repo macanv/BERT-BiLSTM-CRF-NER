@@ -32,6 +32,8 @@ cd BERT-BiLSTM-CRF-NER/
 python3 setup.py install
 ```
 
+if you do not want to install, you just need clone this project and reference the file of <run.py> to train the model or start the service. 
+
 ## UPDATE:
 - 2019.2.25 Fix some bug for ner service
 - 2019.2.19: add text classification service
