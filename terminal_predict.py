@@ -17,7 +17,7 @@ from bert_base.bert import tokenization, modeling
 from bert_base.train.train_helper import get_args_parser
 args = get_args_parser()
 
-model_dir = 'C:\workspace\python\BERT_Base\output\predict_ner'
+model_dir = r'C:\Users\C\Documents\Tencent Files\389631699\FileRecv\semi_corpus_people_2014'
 bert_dir = 'F:\chinese_L-12_H-768_A-12'
 
 is_training=False

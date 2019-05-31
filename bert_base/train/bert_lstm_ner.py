@@ -27,7 +27,7 @@ from bert_base.bert import tokenization
 # import
 
 from bert_base.train.models import create_model, InputFeatures, InputExample
-
+from bert_base.server.helper import set_logger
 __version__ = '0.1.0'
 
 __all__ = ['__version__', 'DataProcessor', 'NerProcessor', 'write_tokens', 'convert_single_example',
@@ -35,6 +35,7 @@ __all__ = ['__version__', 'DataProcessor', 'NerProcessor', 'write_tokens', 'conv
            'model_fn_builder', 'train']
 
 
+logger = set_logger('NER Training')
 
 class DataProcessor(object):
     """Base class for data converters for sequence classification data sets."""
@@ -258,15 +259,15 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
 
     # 打印部分样本数据信息
     if ex_index < 5:
-        tf.logging.info("*** Example ***")
-        tf.logging.info("guid: %s" % (example.guid))
-        tf.logging.info("tokens: %s" % " ".join(
+        logger.info("*** Example ***")
+        logger.info("guid: %s" % (example.guid))
+        logger.info("tokens: %s" % " ".join(
             [tokenization.printable_text(x) for x in tokens]))
-        tf.logging.info("input_ids: %s" % " ".join([str(x) for x in input_ids]))
-        tf.logging.info("input_mask: %s" % " ".join([str(x) for x in input_mask]))
-        tf.logging.info("segment_ids: %s" % " ".join([str(x) for x in segment_ids]))
-        tf.logging.info("label_ids: %s" % " ".join([str(x) for x in label_ids]))
-        # tf.logging.info("label_mask: %s" % " ".join([str(x) for x in label_mask]))
+        logger.info("input_ids: %s" % " ".join([str(x) for x in input_ids]))
+        logger.info("input_mask: %s" % " ".join([str(x) for x in input_mask]))
+        logger.info("segment_ids: %s" % " ".join([str(x) for x in segment_ids]))
+        logger.info("label_ids: %s" % " ".join([str(x) for x in label_ids]))
+        # logger.info("label_mask: %s" % " ".join([str(x) for x in label_mask]))
 
     # 结构化为一个类
     feature = InputFeatures(
@@ -297,7 +298,7 @@ def filed_based_convert_examples_to_features(
     # 遍历训练数据
     for (ex_index, example) in enumerate(examples):
         if ex_index % 5000 == 0:
-            tf.logging.info("Writing example %d of %d" % (ex_index, len(examples)))
+            logger.info("Writing example %d of %d" % (ex_index, len(examples)))
         # 对于每一个训练样本,
         feature = convert_single_example(ex_index, example, label_list, max_seq_length, tokenizer, output_dir, mode)
 
@@ -367,9 +368,9 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
     """
 
     def model_fn(features, labels, mode, params):
-        tf.logging.info("*** Features ***")
+        logger.info("*** Features ***")
         for name in sorted(features.keys()):
-            tf.logging.info("  name = %s, shape = %s" % (name, features[name].shape))
+            logger.info("  name = %s, shape = %s" % (name, features[name].shape))
         input_ids = features["input_ids"]
         input_mask = features["input_mask"]
         segment_ids = features["segment_ids"]
@@ -451,7 +452,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
 def get_last_checkpoint(model_path):
     if not os.path.exists(os.path.join(model_path, 'checkpoint')):
-        tf.logging.info('checkpoint file not exits:'.format(os.path.join(model_path, 'checkpoint')))
+        logger.info('checkpoint file not exits:'.format(os.path.join(model_path, 'checkpoint')))
         return None
     last = None
     with codecs.open(os.path.join(model_path, 'checkpoint'), 'r', encoding='utf-8') as fd:
@@ -554,17 +555,17 @@ def train(args):
             raise AttributeError('training data is so small...')
         num_warmup_steps = int(num_train_steps * args.warmup_proportion)
 
-        tf.logging.info("***** Running training *****")
-        tf.logging.info("  Num examples = %d", len(train_examples))
-        tf.logging.info("  Batch size = %d", args.batch_size)
-        tf.logging.info("  Num steps = %d", num_train_steps)
+        logger.info("***** Running training *****")
+        logger.info("  Num examples = %d", len(train_examples))
+        logger.info("  Batch size = %d", args.batch_size)
+        logger.info("  Num steps = %d", num_train_steps)
 
         eval_examples = processor.get_dev_examples(args.data_dir)
 
         # 打印验证集数据信息
-        tf.logging.info("***** Running evaluation *****")
-        tf.logging.info("  Num examples = %d", len(eval_examples))
-        tf.logging.info("  Batch size = %d", args.batch_size)
+        logger.info("***** Running evaluation *****")
+        logger.info("  Num examples = %d", len(eval_examples))
+        logger.info("  Batch size = %d", args.batch_size)
 
     label_list = processor.get_labels()
     # 返回的model_dn 是一个函数，其定义了模型，训练，评测方法，并且使用钩子参数，加载了BERT模型的参数进行了自己模型的参数初始化过程
@@ -644,9 +645,9 @@ def train(args):
                                                  args.max_seq_length, tokenizer,
                                                  predict_file, args.output_dir, mode="test")
 
-        tf.logging.info("***** Running prediction*****")
-        tf.logging.info("  Num examples = %d", len(predict_examples))
-        tf.logging.info("  Batch size = %d", args.batch_size)
+        logger.info("***** Running prediction*****")
+        logger.info("  Num examples = %d", len(predict_examples))
+        logger.info("  Batch size = %d", args.batch_size)
 
         predict_drop_remainder = False
         predict_input_fn = file_based_input_fn_builder(
@@ -666,8 +667,8 @@ def train(args):
                 label_token = str(predict_line.label).split(' ')
                 len_seq = len(label_token)
                 if len(line_token) != len(label_token):
-                    tf.logging.info(predict_line.text)
-                    tf.logging.info(predict_line.label)
+                    logger.info(predict_line.text)
+                    logger.info(predict_line.label)
                     break
                 for id in prediction:
                     if idx >= len_seq:
@@ -680,9 +681,9 @@ def train(args):
                     try:
                         line += line_token[idx] + ' ' + label_token[idx] + ' ' + curr_labels + '\n'
                     except Exception as e:
-                        tf.logging.info(e)
-                        tf.logging.info(predict_line.text)
-                        tf.logging.info(predict_line.label)
+                        logger.info(e)
+                        logger.info(predict_line.text)
+                        logger.info(predict_line.label)
                         line = ''
                         break
                     idx += 1
