@@ -79,6 +79,10 @@ bert-base-ner-train \
     -bert_config_file {bert_config.json under the Google BERT model dir} \
     -vocab_file {vocab.txt under the Google BERT model dir}
 ```
+like my init_checkpoint: 
+```
+init_checkpoint = F:\chinese_L-12_H-768_A-12\bert_model.ckpt
+```
 you can special labels using -label_list params, the project get labels from training data.  
 ```angular2html
 # using , split
@@ -171,6 +175,8 @@ you can see this after run the above code:
 
 Note that it can not start NER service and Text Classification service together. but you can using twice command line start ner service and text classification with different port.  
 
+## License
+MIT.  
 
 # The following tutorial is an old version and will be removed in the future.
 
