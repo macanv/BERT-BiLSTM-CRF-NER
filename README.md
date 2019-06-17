@@ -94,6 +94,7 @@ OR save label in a file like labels.txt, one line one label
 ```    
 
 After training model, the NER model will be saved in {output_dir} which you special above cmd line.  
+##### My Training environment：Tesla P40 24G mem  
 
 ## As Service
 Many server and client code comes from excellent open source projects: [bert as service of hanxiao](https://github.com/hanxiao/bert-as-service) If my code violates any license agreement, please let me know and I will correct it the first time.
