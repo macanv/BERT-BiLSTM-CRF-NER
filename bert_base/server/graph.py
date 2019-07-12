@@ -286,7 +286,7 @@ def optimize_ner_model(args, num_labels,  logger=None):
                 from bert_base.train.models import create_model
                 (total_loss, logits, trans, pred_ids) = create_model(
                     bert_config=bert_config, is_training=False, input_ids=input_ids, input_mask=input_mask, segment_ids=None,
-                    labels=None, num_labels=num_labels, use_one_hot_embeddings=False, dropout_rate=1.0)
+                    labels=None, num_labels=num_labels, use_one_hot_embeddings=False, dropout_rate=1.0, lstm_size=args.lstm_size)
                 pred_ids = tf.identity(pred_ids, 'pred_ids')
                 saver = tf.train.Saver()
 
