@@ -339,8 +339,11 @@ def optimize_class_model(args, num_labels,  logger=None):
 
                 bert_config = modeling.BertConfig.from_json_file(os.path.join(args.bert_model_dir, 'bert_config.json'))
                 from bert_base.train.models import create_classification_model
-                loss, per_example_loss, logits, probabilities = create_classification_model(bert_config=bert_config, is_training=False,
-                    input_ids=input_ids, input_mask=input_mask, segment_ids=None, labels=None, num_labels=num_labels)
+                #为了兼容多输入，增加segment_id特征，即训练代码中的input_type_ids特征。
+                #loss, per_example_loss, logits, probabilities = create_classification_model(bert_config=bert_config, is_training=False,
+                    #input_ids=input_ids, input_mask=input_mask, segment_ids=None, labels=None, num_labels=num_labels)
+                segment_ids = tf.placeholder(tf.int32, (None, args.max_seq_len), 'segment_ids')
+                loss, per_example_loss, logits, probabilities = create_classification_model(bert_config=bert_config, is_training=False, input_ids=input_ids, input_mask=input_mask, segment_ids=segment_ids, labels=None, num_labels=num_labels)
                 # pred_ids = tf.argmax(probabilities, axis=-1, output_type=tf.int32, name='pred_ids')
                 # pred_ids = tf.identity(pred_ids, 'pred_ids')
                 probabilities = tf.identity(probabilities, 'pred_prob')
