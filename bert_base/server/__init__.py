@@ -459,7 +459,10 @@ class BertWorker(Process):
                 graph_def.ParseFromString(f.read())
             input_ids = features["input_ids"]
             input_mask = features["input_mask"]
-            input_map = {"input_ids": input_ids, "input_mask": input_mask}
+            #为了兼容多输入，增加segment_id特征，即训练代码中的input_type_ids特征。
+            #input_map = {"input_ids": input_ids, "input_mask": input_mask}
+            segment_ids=features["input_type_ids"]
+            input_map = {"input_ids": input_ids, "input_mask": input_mask,"segment_ids":segment_ids}            
             pred_probs = tf.import_graph_def(graph_def, name='', input_map=input_map, return_elements=['pred_prob:0'])
 
             return EstimatorSpec(mode=mode, predictions={
