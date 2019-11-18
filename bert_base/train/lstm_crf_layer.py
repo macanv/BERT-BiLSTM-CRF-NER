@@ -116,7 +116,7 @@ class BLSTM_CRF(object):
                 b = tf.get_variable("b", shape=[self.hidden_unit], dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
                 output = tf.reshape(lstm_outputs, shape=[-1, self.hidden_unit * 2])
-                hidden = tf.tanh(tf.nn.xw_plus_b(output, W, b))
+                hidden = tf.nn.xw_plus_b(output, W, b)
 
             # project to score of tags
             with tf.variable_scope("logits"):
