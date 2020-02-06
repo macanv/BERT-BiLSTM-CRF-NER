@@ -35,6 +35,7 @@ python3 setup.py install
 if you do not want to install, you just need clone this project and reference the file of <run.py> to train the model or start the service. 
 
 ## UPDATE:
+- 2020.2.6 add simple flask ner service code
 - 2019.2.25 Fix some bug for ner service
 - 2019.2.19: add text classification service
 -  fix Missing loss error
@@ -177,6 +178,10 @@ you can see this after run the above code:
 ![](./pictures/text_class_rst.png)
 
 Note that it can not start NER service and Text Classification service together. but you can using twice command line start ner service and text classification with different port.  
+
+### Flask server service
+sometimes, multi thread deep learning model service may not use C/S service, you can useing simple http service replace that, like using flask.
+now you can reference code:bert_base/server/simple_flask_http_service.py，building your simple http server service
 
 ## License
 MIT.  
