@@ -45,7 +45,6 @@ class BertHTTPProxy(Process):
             data = request.form if request.form else request.json
             try:
                 logger.info('new request from %s' % request.remote_addr)
-                print(data)
                 return {'id': data['id'],
                         'result': bc.encode(data['texts'], is_tokenized=bool(
                             data['is_tokenized']) if 'is_tokenized' in data else False)}
