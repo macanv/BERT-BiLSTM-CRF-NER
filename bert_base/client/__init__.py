@@ -427,9 +427,11 @@ class ConcurrentBertClient(BertClient):
         def arg_wrapper(self, *args, **kwargs):
             try:
                 bc = self.available_bc.pop()
-                f = getattr(bc, func.__name__)
-                r = f if isinstance(f, dict) else f(*args, **kwargs)
-                self.available_bc.append(bc)
+                try:
+                    f = getattr(bc, func.__name__)
+                    r = f if isinstance(f, dict) else f(*args, **kwargs)
+                finally:
+                    self.available_bc.append(bc)
                 return r
             except IndexError:
                 raise RuntimeError('Too many concurrent connections!'
