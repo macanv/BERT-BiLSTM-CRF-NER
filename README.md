@@ -42,6 +42,14 @@ span_scores = aggregate_span_confidence(pred_tags, token_marginals, label2id, to
 
 `span_scores` 会返回一个列表，其中每个实体包含 `start`、`end`、`type` 以及 `min_prob`、`mean_prob`、`prod_prob` 三种评分，可直接用于排序、置信度过滤或下游反馈。【F:bert_base/train/confidence.py†L146-L215】
 
+要快速体验置信度输出与可视化，可以运行仓库根目录下的示例脚本：
+
+```bash
+python confidence_demo.py
+```
+
+脚本会打印每个 token 的 CRF 边缘概率、实体级置信度汇总，并在 `pictures/confidence_demo.svg` 生成热力图，可直接在浏览器中查看。【F:confidence_demo.py†L1-L170】
+
 ## Download project and install
 You can install this project by:
 ```
