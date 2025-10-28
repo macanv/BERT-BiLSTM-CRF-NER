@@ -17,10 +17,41 @@ The evaluation codes come from:https://github.com/guillaumegenthial/tf_metrics/b
 Try to implement NER work based on google's BERT code and BiLSTM-CRF network!
 This project may be more close to process Chinese data. but other language only need Modify a small amount of code.
 
-THIS PROJECT ONLY SUPPORT Python3.  
+THIS PROJECT ONLY SUPPORT Python3.
 ###################################################################
-## Download project and install  
-You can install this project by:  
+## CRF 层的分数与概率
+条件随机场（CRF）层会针对整条标签序列计算一条“路径分数”：将发射分数（来自前馈或 BLSTM 投影层的逐标签 logits）与可训练的转移分数矩阵一起累加，以衡量某个标签路径的整体得分。在 `bert_base/train/lstm_crf_layer.py` 中，`crf_layer` 会建立转移矩阵并调用 `tf.contrib.crf.crf_log_likelihood` 计算真实标签路径的对数似然，同时返回最优路径解码所需的转移参数。【F:bert_base/train/lstm_crf_layer.py†L150-L167】
+
+训练时，CRF 会对所有可能路径的得分做归一化：log-likelihood 内部通过分区函数 \(Z\) 将路径分数转为条件概率，因此反向传播的损失就是负对数似然。【F:bert_base/train/lstm_crf_layer.py†L150-L167】推理阶段常用 `tf.contrib.crf.crf_decode` 执行 Viterbi 动态规划找到得分最高的路径，得到的只是最可能的标签序列本身，而不是逐实体的概率值；如果需要概率，需要额外基于路径分数和分区函数计算。【F:bert_base/train/lstm_crf_layer.py†L160-L166】
+
+## CRF 边缘概率与实体置信度
+`bert_base/train/confidence.py` 提供了复用 CRF 转移矩阵与发射分数的前向-后向算法，可以在推理阶段计算每个位置的标签边缘概率 `p(y_t=tag | x)`，再把这些概率聚合成实体级置信度。【F:bert_base/train/confidence.py†L1-L215】
+
+* `compute_token_marginals(logits, transition_params, sequence_lengths)`：接受模型输出的 logits、`crf_layer` 返回的转移矩阵和真实序列长度，返回每个 token 的标签分布。
+* `aggregate_span_confidence(tags, token_marginals, label_to_id, tokens=None)`：基于预测标签序列抽取实体 span，并计算最小值、平均值与概率乘积三种置信度汇总指标，可选地返回对应的 token 片段，方便服务化输出。【F:bert_base/train/confidence.py†L22-L215】
+
+下面示例展示了如何在预测脚本中调用置信度模块：
+
+```python
+from bert_base.train import aggregate_span_confidence, compute_token_marginals
+
+# logits, trans_params, seq_lens 分别来自模型输出与 crf_layer
+token_marginals = compute_token_marginals(logits, trans_params, seq_lens)[0]
+span_scores = aggregate_span_confidence(pred_tags, token_marginals, label2id, tokens)
+```
+
+`span_scores` 会返回一个列表，其中每个实体包含 `start`、`end`、`type` 以及 `min_prob`、`mean_prob`、`prod_prob` 三种评分，可直接用于排序、置信度过滤或下游反馈。【F:bert_base/train/confidence.py†L146-L215】
+
+要快速体验置信度输出与可视化，可以运行仓库根目录下的示例脚本：
+
+```bash
+python confidence_demo.py
+```
+
+脚本会打印每个 token 的 CRF 边缘概率、实体级置信度汇总，并在 `pictures/confidence_demo.svg` 生成热力图，可直接在浏览器中查看。【F:confidence_demo.py†L1-L170】
+
+## Download project and install
+You can install this project by:
 ```
 pip install bert-base==0.0.9 -i https://pypi.python.org/simple
 ```

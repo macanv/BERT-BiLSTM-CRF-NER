@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' width='580' height='320'
+     viewBox='0 0 580 320'>
+  <rect x='0' y='0' width='580' height='320' fill='#ffffff' stroke='none'/>
+  <text x='80' y='30' font-size='18' font-family='sans-serif'>CRF Token Marginals</text>
+  <text x='70' y='80.0' font-size='14' font-family='sans-serif' text-anchor='end' dominant-baseline='middle'>B-LOC</text>
+  <rect x='80' y='60' width='80' height='40' fill='#426ba8' stroke='#ffffff' stroke-width='1'/>
+  <text x='120.0' y='80.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.86</text>
+  <rect x='160' y='60' width='80' height='40' fill='#e6f1e4' stroke='#ffffff' stroke-width='1'/>
+  <text x='200.0' y='80.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.05</text>
+  <rect x='240' y='60' width='80' height='40' fill='#e7f2e5' stroke='#ffffff' stroke-width='1'/>
+  <text x='280.0' y='80.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.04</text>
+  <rect x='320' y='60' width='80' height='40' fill='#e5f0e4' stroke='#ffffff' stroke-width='1'/>
+  <text x='360.0' y='80.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.05</text>
+  <rect x='400' y='60' width='80' height='40' fill='#e8f2e5' stroke='#ffffff' stroke-width='1'/>
+  <text x='440.0' y='80.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.04</text>
+  <rect x='480' y='60' width='80' height='40' fill='#eaf4e6' stroke='#ffffff' stroke-width='1'/>
+  <text x='520.0' y='80.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.03</text>
+  <text x='70' y='120.0' font-size='14' font-family='sans-serif' text-anchor='end' dominant-baseline='middle'>I-LOC</text>
+  <rect x='80' y='100' width='80' height='40' fill='#deebe1' stroke='#ffffff' stroke-width='1'/>
+  <text x='120.0' y='120.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.09</text>
+  <rect x='160' y='100' width='80' height='40' fill='#3762a4' stroke='#ffffff' stroke-width='1'/>
+  <text x='200.0' y='120.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.91</text>
+  <rect x='240' y='100' width='80' height='40' fill='#4c73ab' stroke='#ffffff' stroke-width='1'/>
+  <text x='280.0' y='120.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.81</text>
+  <rect x='320' y='100' width='80' height='40' fill='#deeae1' stroke='#ffffff' stroke-width='1'/>
+  <text x='360.0' y='120.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.09</text>
+  <rect x='400' y='100' width='80' height='40' fill='#e9f4e6' stroke='#ffffff' stroke-width='1'/>
+  <text x='440.0' y='120.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.03</text>
+  <rect x='480' y='100' width='80' height='40' fill='#e9f3e5' stroke='#ffffff' stroke-width='1'/>
+  <text x='520.0' y='120.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.03</text>
+  <text x='70' y='160.0' font-size='14' font-family='sans-serif' text-anchor='end' dominant-baseline='middle'>O</text>
+  <rect x='80' y='140' width='80' height='40' fill='#ecf6e6' stroke='#ffffff' stroke-width='1'/>
+  <text x='120.0' y='160.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.02</text>
+  <rect x='160' y='140' width='80' height='40' fill='#edf7e7' stroke='#ffffff' stroke-width='1'/>
+  <text x='200.0' y='160.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.01</text>
+  <rect x='240' y='140' width='80' height='40' fill='#e2eee3' stroke='#ffffff' stroke-width='1'/>
+  <text x='280.0' y='160.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.07</text>
+  <rect x='320' y='140' width='80' height='40' fill='#557baf' stroke='#ffffff' stroke-width='1'/>
+  <text x='360.0' y='160.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.76</text>
+  <rect x='400' y='140' width='80' height='40' fill='#e7f2e5' stroke='#ffffff' stroke-width='1'/>
+  <text x='440.0' y='160.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.04</text>
+  <rect x='480' y='140' width='80' height='40' fill='#e9f3e5' stroke='#ffffff' stroke-width='1'/>
+  <text x='520.0' y='160.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.03</text>
+  <text x='70' y='200.0' font-size='14' font-family='sans-serif' text-anchor='end' dominant-baseline='middle'>B-ORG</text>
+  <rect x='80' y='180' width='80' height='40' fill='#edf6e7' stroke='#ffffff' stroke-width='1'/>
+  <text x='120.0' y='200.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.02</text>
+  <rect x='160' y='180' width='80' height='40' fill='#edf7e7' stroke='#ffffff' stroke-width='1'/>
+  <text x='200.0' y='200.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.01</text>
+  <rect x='240' y='180' width='80' height='40' fill='#e8f3e5' stroke='#ffffff' stroke-width='1'/>
+  <text x='280.0' y='200.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.04</text>
+  <rect x='320' y='180' width='80' height='40' fill='#e4efe4' stroke='#ffffff' stroke-width='1'/>
+  <text x='360.0' y='200.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.06</text>
+  <rect x='400' y='180' width='80' height='40' fill='#4c73ab' stroke='#ffffff' stroke-width='1'/>
+  <text x='440.0' y='200.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.81</text>
+  <rect x='480' y='180' width='80' height='40' fill='#e7f1e5' stroke='#ffffff' stroke-width='1'/>
+  <text x='520.0' y='200.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.05</text>
+  <text x='70' y='240.0' font-size='14' font-family='sans-serif' text-anchor='end' dominant-baseline='middle'>I-ORG</text>
+  <rect x='80' y='220' width='80' height='40' fill='#ecf6e7' stroke='#ffffff' stroke-width='1'/>
+  <text x='120.0' y='240.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.02</text>
+  <rect x='160' y='220' width='80' height='40' fill='#edf7e7' stroke='#ffffff' stroke-width='1'/>
+  <text x='200.0' y='240.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.01</text>
+  <rect x='240' y='220' width='80' height='40' fill='#e8f2e5' stroke='#ffffff' stroke-width='1'/>
+  <text x='280.0' y='240.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.04</text>
+  <rect x='320' y='220' width='80' height='40' fill='#e8f2e5' stroke='#ffffff' stroke-width='1'/>
+  <text x='360.0' y='240.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.04</text>
+  <rect x='400' y='220' width='80' height='40' fill='#e1ede2' stroke='#ffffff' stroke-width='1'/>
+  <text x='440.0' y='240.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.07</text>
+  <rect x='480' y='220' width='80' height='40' fill='#426ba8' stroke='#ffffff' stroke-width='1'/>
+  <text x='520.0' y='240.0' font-size='13' font-family='monospace' text-anchor='middle' dominant-baseline='middle'>0.86</text>
+  <text x='120.0' y='290' font-size='14' font-family='sans-serif' text-anchor='middle'>厦</text>
+  <text x='200.0' y='290' font-size='14' font-family='sans-serif' text-anchor='middle'>门</text>
+  <text x='280.0' y='290' font-size='14' font-family='sans-serif' text-anchor='middle'>大</text>
+  <text x='360.0' y='290' font-size='14' font-family='sans-serif' text-anchor='middle'>学</text>
+  <text x='440.0' y='290' font-size='14' font-family='sans-serif' text-anchor='middle'>腾</text>
+  <text x='520.0' y='290' font-size='14' font-family='sans-serif' text-anchor='middle'>讯</text>
+</svg>
